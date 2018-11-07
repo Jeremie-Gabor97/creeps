@@ -1,0 +1,20 @@
+{
+	"compilerOptions": {
+		"outDir": "./dist",
+		"allowJs": true,
+		"noImplicitAny": true,
+		"strictNullChecks": false,
+		"rootDir": "src",
+		"target": "es6",
+		"module": "commonjs",
+		"moduleResolution": "node",
+		"sourceMap": true,
+		"jsx": "react"
+	},
+	"include": [
+		"./src/server/**/*"
+	],
+	"exclude": [
+		"node_modules"
+	]
+}

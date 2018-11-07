@@ -1,0 +1,81 @@
+.App {
+	text-align: center;
+	display: flex;
+	align-items: center;
+	flex-direction: column;
+  }
+  
+  .App-screen {
+	  position: relative;
+	  width: 800px;
+	  height: 600px;
+	  overflow: hidden;
+  }
+  
+  .App-screen .MainScreen,
+  .App-screen .LobbyScreen {
+	  position: absolute;
+	  left: 0px;
+	  top: 0px;
+  }
+  
+  .App-header {
+	background-color: #222;
+	height: 150px;
+	padding: 20px;
+	color: white;
+  }
+  
+  .App-title {
+	font-size: 1.5em;
+  }
+  
+  .App-intro {
+	font-size: large;
+  }
+  
+  @keyframes App-logo-spin {
+	from { transform: rotate(0deg); }
+	to { transform: rotate(360deg); }
+  }
+  
+  .App-MainScreen-enter {
+	  opacity: 0;
+  }
+  
+  .App-MainScreen-enter-active {
+	  opacity: 1;
+	  transition: opacity 1s;
+  }
+  
+  .App-MainScreen-exit {
+	  opacity: 1;
+  }
+  
+  .App-MainScreen-exit-active {
+	  opacity: 0;
+	  transition: opacity 1s;
+  }
+  
+  .swag-enter {
+	  transform: translateX(100%);
+	  opacity: 0;
+  }
+  
+  .swag-enter-active {
+	  transform: translateX(0%);
+	  opacity: 1;
+	  transition: all 1s ease-in-out;
+  }
+  
+  .swag-leave {
+	  transform: translateX(0%);
+	  opacity: 1;
+  }
+  
+  .swag-leave-active {
+	  transform: translateX(-100%);
+	  opacity: 0;
+	  transition: all 1s ease-in-out;
+  }
+  

@@ -1,0 +1,8 @@
+.LobbyScreen {
+	width: 100%;
+	height: 100%;
+}
+
+.LobbyScreen-header-username {
+	font-size: 18px;
+}
