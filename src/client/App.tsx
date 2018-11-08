@@ -20,7 +20,7 @@ class App extends React.Component<{}> {
 
 	constructor(props: {}) {
 		super(props);
-		this.socket = io('http://localhost:5000');
+		this.socket = io();
 		extendObservable(this, {
 			activeScreen: ScreenType.Main
 		});
