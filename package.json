@@ -1,5 +1,5 @@
 {
-	"name": "tanks",
+	"name": "creeps",
 	"version": "1.0.0",
 	"description": "sick",
 	"main": "index.js",
@@ -41,8 +41,9 @@
 	},
 	"scripts": {
 		"build": "webpack && tsc && cp dist/client/project.bundle.js public/bundle.js && cp dist/client/project.bundle.js.map public/bundle.js.map",
+		"postinstall": "webpack -p && tsc && cp dist/client/project.bundle.js public/bundle.js",
 		"start": "node dist/server/index.js"
 	},
-	"author": "James Barty & Jeremie Gabor",
+	"author": "James Barty",
 	"license": "ISC"
 }
