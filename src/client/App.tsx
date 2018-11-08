@@ -1,4 +1,4 @@
-import { extendObservable } from 'mobx';
+import { observable } from 'mobx';
 import { observer } from 'mobx-react';
 import * as React from 'react';
 import * as ReactCSSTransitionGroup from 'react-addons-css-transition-group';
@@ -14,16 +14,14 @@ enum ScreenType {
 	Lobby
 }
 
+@observer
 class App extends React.Component<{}> {
-	activeScreen: ScreenType;
+	@observable activeScreen: ScreenType = ScreenType.Main;
 	socket: SocketIOClient.Socket;
 
 	constructor(props: {}) {
 		super(props);
 		this.socket = io();
-		extendObservable(this, {
-			activeScreen: ScreenType.Main
-		});
 	}
 
 	handleLogin = () => {
@@ -53,26 +51,9 @@ class App extends React.Component<{}> {
 						{this.renderScreen()}
 					</ReactCSSTransitionGroup>
 				</div>
-				{/*<CSSTransition
-					in={true}
-					classNames={'App-MainScreen'}
-					timeout={1000}
-					onEntered={() => {
-						console.log('entered');
-					}}
-				>
-					<MainScreen onLogin={this.handleLogin}/>
-				</CSSTransition>
-				<CSSTransition
-					in={false}
-					classNames={'App-LobbyScreen'}
-					timeout={1000}
-				>
-					<LobbyScreen />
-				</CSSTransition>*/}
 			</div>
 		);
 	}
 }
 
-export default observer(App);
+export default App;

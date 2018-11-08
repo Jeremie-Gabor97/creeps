@@ -1,19 +1,12 @@
-import { extendObservable } from 'mobx';
+import { observable } from 'mobx';
 import { observer } from 'mobx-react';
 import * as React from 'react';
 import './LobbyScreen.css';
 
+@observer
 class LobbyScreen extends React.Component<{}> {
 	usernameInput: HTMLInputElement | null;
-	selectedTab: 'lobby' | 'progress';
-
-	constructor(props: {}) {
-		super(props);
-
-		extendObservable(this, {
-			selectedTab: 'lobby'
-		});
-	}
+	@observable selectedTab: 'lobby' | 'progress' = 'lobby';
 
 	onClickHeaderLobby = () => {
 		this.selectedTab = 'lobby';
@@ -59,4 +52,4 @@ class LobbyScreen extends React.Component<{}> {
 	}
 }
 
-export default observer(LobbyScreen);
+export default LobbyScreen;
