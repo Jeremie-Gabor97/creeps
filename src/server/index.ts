@@ -1,12 +1,16 @@
-import * as http from 'http';
 import * as express from 'express';
-import * as socketIO from 'socket.io';
+import * as http from 'http';
 import * as path from 'path';
+import * as socketIO from 'socket.io';
+import * as SocketContract from '../shared/socketcontract';
+import Lobby from './lobby';
 
 const app = express();
 const port = process.env.PORT || 5000;
 const server = http.createServer(app);
 const ioServer = socketIO(server);
+
+const lobby = new Lobby();
 
 app.use(express.static('public'));
 
@@ -18,6 +22,16 @@ ioServer.on('connection', function (socket: socketIO.Socket) {
 	console.log('a user connected');
 	socket.on('disconnect', function () {
 		console.log('user disconnected');
+	});
+
+	socket.on('login', function (loginData: SocketContract.ILoginData) {
+		const usernameValid = true;
+		if (usernameValid) {
+			lobby.loginPlayer(socket, loginData.username);
+		}
+		else {
+			socket.emit('loginFailed');
+		}
 	});
 });
 
