@@ -5,14 +5,17 @@ import * as ReactCSSTransitionGroup from 'react-addons-css-transition-group';
 import * as io from 'socket.io-client';
 
 import * as SocketContract from '../shared/socketcontract';
+import GameLobbyScreen from './gamelobbyscreen';
 import LobbyScreen from './lobbyscreen';
 import MainScreen from './mainscreen';
+import RootStore from './stores';
 
-import './App.css';
+import './app.css';
 
 export enum ScreenType {
 	Main,
-	Lobby
+	Lobby,
+	GameLobby
 }
 
 @observer
@@ -24,6 +27,7 @@ class App extends React.Component<{}> {
 	constructor(props: {}) {
 		super(props);
 		this.socket = io();
+		(window as any).gameState = RootStore;
 
 		this.socket.on('disconnect', () => {
 			this.disconnected = true;
@@ -40,6 +44,8 @@ class App extends React.Component<{}> {
 				return <MainScreen key={'main'} socket={this.socket} switchScreen={this.switchScreen} />;
 			case ScreenType.Lobby:
 				return <LobbyScreen key={'lobby'} socket={this.socket} switchScreen={this.switchScreen} />;
+			case ScreenType.GameLobby:
+				return <GameLobbyScreen key={'gameLobby'} socket={this.socket} switchScreen={this.switchScreen} />;
 			default:
 				return null;
 		}
@@ -49,6 +55,7 @@ class App extends React.Component<{}> {
 		return (
 			<div className={'App'}>
 				<div className={'App-screen'}>
+					<img className={'background'} src={'assets/backgrounds/main.jpg'}/>
 					{this.disconnected
 						? (
 							<div className={'App-disconnected'}>

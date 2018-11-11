@@ -4,6 +4,7 @@ import * as React from 'react';
 
 import * as SocketContract from '../shared/socketcontract';
 import { SocketEvent } from '../shared/socketcontract';
+import { confirmUsername, updateLobby } from './actions';
 import { ScreenType } from './app';
 
 import './mainscreen.css';
@@ -27,13 +28,19 @@ class MainScreen extends React.Component<IMainScreenProps> {
 	}
 
 	attachSocketListeners() {
+		this.props.socket.on(SocketEvent.ConfirmUsername, this.onConfirmUsername);
 		this.props.socket.on(SocketEvent.LoginFailed, this.onLoginFailed);
 		this.props.socket.on(SocketEvent.LobbyUpdate, this.onLobbyUpdate);
 	}
 
 	removeSocketListeners() {
+		this.props.socket.on(SocketEvent.ConfirmUsername, this.onConfirmUsername);
 		this.props.socket.removeEventListener(SocketEvent.LoginFailed, this.onLoginFailed);
 		this.props.socket.removeEventListener(SocketEvent.LobbyUpdate, this.onLobbyUpdate);
+	}
+
+	onConfirmUsername(username: string) {
+		confirmUsername(username); 
 	}
 
 	onLoginFailed = (data: SocketContract.ILoginFailedData) => {
@@ -55,6 +62,7 @@ class MainScreen extends React.Component<IMainScreenProps> {
 	onLobbyUpdate = (data: SocketContract.ILobbyUpdateData) => {
 		// logged in successfully
 		if (data.arriving) {
+			updateLobby(data);
 			this.props.switchScreen(ScreenType.Lobby);
 		}
 	}
@@ -79,18 +87,23 @@ class MainScreen extends React.Component<IMainScreenProps> {
 				<div className={'MainScreen-title'}>
 					{'Creeps'}
 				</div>
-				<input className={'MainScreen-username'} type="text" ref={x => this.usernameInput = x } maxLength={15}/>
-				<span className={'MainScreen-login'} onClick={this.onClickLogin}>
-					{'Login'}
-				</span>
-				{this.loginFailed && (
-					<div className={'MainScreen-loginFailed'}>
-						{this.loginFailed}
-						<span className={'MainScreen-dismissLoginFailed'} onClick={this.onClickDismiss}>
-							{'OK'}
+				
+				<div className={'MainScreen-loginBox'}>
+					<div className={'MainScreen-usernameLabel'}>
+						{'Username'}
+					</div>
+					<input className={'MainScreen-username'} type="text" ref={x => this.usernameInput = x} maxLength={15} />
+					{this.loginFailed && (
+						<div className={'MainScreen-loginFailed'}>
+							{this.loginFailed}
+						</div>
+					)}
+					<div className={'MainScreen-loginButtonContainer'}>
+						<span className={'MainScreen-loginButton button'} onClick={this.onClickLogin}>
+							{'Login'}
 						</span>
 					</div>
-				)}
+				</div>
 			</div>
 		);
 	}

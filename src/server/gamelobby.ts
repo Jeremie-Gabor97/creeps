@@ -5,18 +5,22 @@ import Lobby, { IPlayerState, Location } from './lobby';
 class GameLobby {
 	lobby: Lobby;
 	id: string;
+	map: string;
 	host: IPlayerState;
 	players: IPlayerState[];
 	maxPlayersPerTeam: number;
 	numTeams: number;
+	title: string;
 
-	constructor(lobby: Lobby, host: IPlayerState, gameLobbyId: string) {
+	constructor(lobby: Lobby, host: IPlayerState, gameLobbyId: string, options: SocketContract.ICreateGameData) {
 		this.lobby = lobby;
 		this.id = gameLobbyId;
 		this.host = host;
 		this.players = [];
-		this.maxPlayersPerTeam = 4;
-		this.numTeams = 2;
+		this.maxPlayersPerTeam = options.maxPlayersPerTeam;
+		this.numTeams = options.numTeams;
+		this.map = options.map;
+		this.title = options.title;
 		this.addPlayer(host, true);
 	}
 

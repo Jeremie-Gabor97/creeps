@@ -1,12 +1,125 @@
 .LobbyScreen {
 	width: 100%;
 	height: 100%;
+	text-align: left;
+	padding: 20px;
+}
+
+.LobbyScreen-header {
+	display: flex;
+	align-items: center;
+	background: rgba(255, 255, 255, 0.7);
+	border-radius: 8px;
+	border: 1px solid grey;
+	padding: 10px;
+}
+
+.LobbyScreen-avatarPrev,
+.LobbyScreen-avatarNext {
+	cursor: pointer;
+	background: white;
+	border: 1px solid grey;
+	height: 26px;
+}
+
+.LobbyScreen-avatarPrev:hover,
+.LobbyScreen-avatarNext:hover {
+	background: lightgrey;
+}
+
+.LobbyScreen-header-avatar {
+	width: 26px;
+	height: 26px;
+	border: 1px solid grey;
+	margin: 0 1px;
 }
 
 .LobbyScreen-header-username {
 	font-size: 18px;
+	margin-left: 10px;
+}
+
+.LobbyScreen-headers {
+	position: relative;
+	top: 1px;
+	margin-top: 10px;
+}
+
+.LobbyScreen-headerEntry {
+	border-top-left-radius: 6px;
+	border-top-right-radius: 6px;
+	background: rgba(255, 255, 255, 0.7);
+	padding: 6px 10px;
+	border: 1px solid grey;
+	z-index: 2;
+	display: inline-block;
+	cursor: pointer;
+	opacity: 0.4;
+}
+
+.LobbyScreen-headerEntry--selected {
+	opacity: 1.0;
+	border-bottom: 1px solid white;
+}
+
+.LobbyScreen-bodyRow {
+	display: flex;
+	height: 50%;
+}
+
+.LobbyScreen-body {
+	padding: 10px;
+	border-radius: 8px;
+	border-top-left-radius: 0px;
+	background: rgba(255, 255, 255, 0.7);
+	border: 1px solid grey;
+	width: 70%;
+}
+
+.LobbyScreen-sidePanel {
+	padding: 10px;
+	width: 28%;
+	margin-left: 2%;
+	background: rgba(255, 255, 255, 0.7);
+	border: 1px solid grey;
+	border-radius: 8px;
 }
 
 .LobbyScreen-joinFailed {
 	color: red;
+}
+
+.LobbyScreen-lobby {
+	display: flex;
+	align-items: center;
+	height: 35px;
+	background: white;
+	border: 1px solid grey;
+	margin-bottom: 10px;
+}
+
+.LobbyScreen-lobbyTitle {
+	padding: 0px 10px;
+}
+
+.LobbyScreen-lobbySpacer {
+	flex: 1 0 0;
+}
+
+.LobbyScreen-lobbyPlayers {
+	padding: 0px 10px;
+}
+
+.LobbyScreen-lobbyJoin {
+	height: 100%;
+	border-left: 1px solid grey;
+	cursor: pointer;
+	padding: 0px 10px;
+	display:flex;
+	align-items: center;
+	background: #dfdfdf;
+}
+
+.LobbyScreen-lobbyJoin:hover {
+	background: lightgrey;
 }

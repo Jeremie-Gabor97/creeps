@@ -4,18 +4,39 @@
 }
 
 .MainScreen-title {
-	font-size: 24px;
+	font-size: 40px;
+	margin-top: 20px;
+	margin-bottom: 20px;
+}
+
+.MainScreen-loginBox {
+	background: rgba(255, 255, 255, 0.5);
+	border-radius: 8px;
+	width: 200px;
+	padding: 20px;
+	margin: auto;
+	border: 1px solid gray;
+	text-align: left;
+}
+
+.MainScreen-username {
+	margin-top: 5px;
+	box-sizing: border-box;
+	width: 100%;
+}
+
+.MainScreen-loginButtonContainer {
+	margin-top: 20px;
+	text-align: center;
 }
 
 .MainScreen-loginFailed {
 	color: red;
+	font-size: 14px;
+	margin-top: 5px;
 }
 
 .MainScreen-dismissLoginFailed {
-	cursor: pointer;
-	border: 1px solid black;
-	border-radius: 2px;
-	padding: 2px 4px;
-	font-size: 12px;
 	margin-left: 4px;
+	color: black;
 }

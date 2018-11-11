@@ -32,7 +32,7 @@ class Lobby {
 	players: Dictionary<IPlayerState>;
 
 	constructor() {
-		this.broadcastStateInterval = setInterval(this.broadcastState, 4000);
+		// this.broadcastStateInterval = setInterval(this.broadcastState, 4000);
 		this.gameCounter = 0;
 		this.gameLobbyCounter = 0;
 		this.gameLobbies = {};
@@ -69,8 +69,9 @@ class Lobby {
 			});
 		}
 		// Now in the lobby, player can create games
-		player.socket.on(SocketEvent.CreateGame, () => {
-			this.addGameLobby(player);
+		player.socket.on(SocketEvent.CreateGame, (data: SocketContract.ICreateGameData) => {
+			// TODO: validate game options
+			this.addGameLobby(player, data);
 		});
 
 		// Now in the lobby, player can join games
@@ -103,13 +104,17 @@ class Lobby {
 		};
 		this.players[username] = newPlayer;
 		this.attachSocketListeners(newPlayer, true);
-		newPlayer.socket.emit('lobbyUpdate', this.getState(true));
+		newPlayer.socket.emit(SocketEvent.ConfirmUsername, username);
+		newPlayer.socket.emit(SocketEvent.LobbyUpdate, this.getState(true));
+		this.broadcastState();
 	}
 
 	addPlayer = (player: IPlayerState) => {
 		player.location = Location.Lobby;
+		player.locationId = '';
 		this.attachSocketListeners(player, false);
-		player.socket.emit('lobbyUpdate', this.getState(true));
+		player.socket.emit(SocketEvent.LobbyUpdate, this.getState(true));
+		this.broadcastState();
 	}
 
 	// completely remove player from server
@@ -119,19 +124,23 @@ class Lobby {
 		delete this.players[player.username];
 		console.log(`player ${player.username} leaving lobby`);
 		player.socket.emit(SocketEvent.Logout);
+		this.broadcastState();
 	}
 
-	addGameLobby(player: IPlayerState) {
+	addGameLobby(player: IPlayerState, data: SocketContract.ICreateGameData) {
+		console.log('adding game lobby');
 		this.removeSocketListeners(player);
 		const gameLobbyId = this.gameLobbyCounter++ + '';
-		const gameLobby = new GameLobby(this, player, gameLobbyId);
+		const gameLobby = new GameLobby(this, player, gameLobbyId, data);
 		this.gameLobbies[gameLobbyId] = gameLobby;
+		this.broadcastState();
 	}
 
 	removeGameLobby(gameId: string) {
 		if (this.gameLobbies[gameId]) {
 			this.gameLobbies[gameId] = null;
 			delete this.gameLobbies[gameId];
+			this.broadcastState();
 		}
 	}
 
@@ -153,6 +162,7 @@ class Lobby {
 			else {
 				this.removeSocketListeners(player);
 				gameLobby.addPlayer(player, false);
+				this.broadcastState();
 			}
 		}
 		else {
@@ -163,16 +173,43 @@ class Lobby {
 		}
 	}
 
+	getNumPlayers() {
+		let players = {
+			lobby: 0,
+			gameLobby: 0,
+			game: 0
+		};
+		Object.keys(this.players).forEach(username => {
+			const player = this.players[username];
+			switch (player.location) {
+				case Location.Lobby:
+					players.lobby += 1;
+					break;
+				case Location.GameLobby:
+					players.gameLobby += 1;
+					break;
+				case Location.Game:
+					players.game += 1;
+					break;
+				default:
+			}
+		});
+		return players;
+	}
+
 	getState(arriving: boolean): SocketContract.ILobbyUpdateData {
 		const gameLobbies = Object.keys(this.gameLobbies).map((gameLobbyKey) => {
 			const gameLobby = this.gameLobbies[gameLobbyKey];
 			return {
 				id: gameLobby.id,
-				numPlayers: gameLobby.players.length
+				numPlayers: gameLobby.players.length,
+				maxPlayers: gameLobby.numTeams * gameLobby.maxPlayersPerTeam,
+				title: gameLobby.title
 			};
 		});
 		const state = {
 			lobbies: gameLobbies,
+			numPlayers: this.getNumPlayers(),
 			arriving
 		};
 		return state;
