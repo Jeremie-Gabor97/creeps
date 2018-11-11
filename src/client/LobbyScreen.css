@@ -6,3 +6,7 @@
 .LobbyScreen-header-username {
 	font-size: 18px;
 }
+
+.LobbyScreen-joinFailed {
+	color: red;
+}

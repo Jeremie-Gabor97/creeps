@@ -24,13 +24,32 @@ ioServer.on('connection', function (socket: socketIO.Socket) {
 		console.log('user disconnected');
 	});
 
-	socket.on('login', function (loginData: SocketContract.ILoginData) {
-		const usernameValid = true;
+	socket.on(SocketContract.SocketEvent.Login, function (loginData: SocketContract.ILoginData) {
+		const username = loginData.username;
+		let usernameValid = true;
+		let failReason = SocketContract.LoginFailedReason.UsernameInUse;
+		if (/^\w+$/.test(username) === false) {
+			usernameValid = false;
+			failReason = SocketContract.LoginFailedReason.UsernameInvalid;
+		}
+		else if (username.length > 15) {
+			usernameValid = false;
+			failReason = SocketContract.LoginFailedReason.UsernameTooLong;
+		}
+		else if (lobby.players[username]) {
+			usernameValid = false;
+		}
+
 		if (usernameValid) {
-			lobby.loginPlayer(socket, loginData.username);
+			console.log('logging in user', username);
+			lobby.loginPlayer(socket, username);
 		}
 		else {
-			socket.emit('loginFailed');
+			console.log('failing to log in in user', username);
+			const data: SocketContract.ILoginFailedData = {
+				reason: failReason
+			};
+			socket.emit(SocketContract.SocketEvent.LoginFailed, data);
 		}
 	});
 });

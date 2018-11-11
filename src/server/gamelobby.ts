@@ -1,4 +1,5 @@
 import * as SocketContract from '../shared/socketcontract';
+import { SocketEvent } from '../shared/socketcontract';
 import Lobby, { IPlayerState, Location } from './lobby';
 
 class GameLobby {
@@ -21,31 +22,43 @@ class GameLobby {
 
 	attachSocketListeners(player: IPlayerState, isHost: boolean) {
 		if (isHost) {
-			player.socket.on('startGame', this.startGame);
-			player.socket.on('leaveGame', this.removeHost);
+			player.socket.on(SocketEvent.StartGame, this.startGame);
+			player.socket.on(SocketEvent.LeaveGameLobby, this.removeHost);
 		}
 		else {
-			player.socket.on('leaveGame', () => {
+			player.socket.on(SocketEvent.LeaveGameLobby, () => {
 				this.removePlayer(player, true);
 			});
 		}
 
-		player.socket.on('switchTeam', (data: SocketContract.ISwitchTeamData) => {
+		player.socket.on(SocketEvent.SwitchTeam, (data: SocketContract.ISwitchTeamData) => {
 			this.switchPlayer(player, data.team);
 		});
 	}
 
 	removeSocketListeners(player: IPlayerState) {
-		player.socket.removeAllListeners('startGame');
-		player.socket.removeAllListeners('leaveGame');
-		player.socket.removeAllListeners('switchTeam');
+		player.socket.removeAllListeners(SocketEvent.StartGame);
+		player.socket.removeAllListeners(SocketEvent.LeaveGameLobby);
+		player.socket.removeAllListeners(SocketEvent.SwitchTeam);
 	}
 
 	startGame = () => {
-		this.players.forEach(player => {
-			this.removeSocketListeners(player);
+		const teamCounts = this.getTeamCounts();
+		const numPlayers = teamCounts[0];
+		let evenTeams = true;
+
+		teamCounts.forEach(count => {
+			if (count !== numPlayers) {
+				evenTeams = false;
+			}
 		});
-		this.lobby.startGame(this);
+
+		if (evenTeams) {
+			this.players.forEach(player => {
+				this.removeSocketListeners(player);
+			});
+			this.lobby.startGame(this);
+		}
 	}
 
 	addPlayer(player: IPlayerState, isHost: boolean) {
@@ -54,12 +67,24 @@ class GameLobby {
 		const team = teamCounts.findIndex(count => count < this.maxPlayersPerTeam);
 		if (team >= 0) {
 			player.location = Location.GameLobby;
+			player.locationId = this.id;
 			player.gameLobbyState = {
 				team: team
 			};
 			this.players.push(player);
 			this.attachSocketListeners(player, isHost);
 			this.broadcastState();
+		}
+	}
+
+	handleDisconnect = (player: IPlayerState) => {
+		const isHost = player.username === this.players[0].username;
+		console.log(`player ${player.username} disconnected from gameLobby`);
+		if (isHost) {
+			this.removeHost();
+		}
+		else {
+			this.removePlayer(player, true);
 		}
 	}
 
@@ -81,6 +106,7 @@ class GameLobby {
 			if (broadcastState) {
 				this.broadcastState();
 			}
+			console.log(`player ${player.username} left gameLobby`);
 		}
 	}
 
@@ -132,7 +158,7 @@ class GameLobby {
 	broadcastState() {
 		const state = this.getState();
 		this.players.forEach(player => {
-			player.socket.emit('gameLobbyUpdate', state);
+			player.socket.emit(SocketEvent.GameLobbyUpdate, state);
 		});
 	}
 }
