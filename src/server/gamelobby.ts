@@ -1,5 +1,5 @@
-import * as SocketContract from '../shared/socketcontract';
-import { SocketEvent } from '../shared/socketcontract';
+import * as SocketContract from '../shared/socketContract';
+import { SocketEvent } from '../shared/socketContract';
 import Lobby, { IPlayerState, Location } from './lobby';
 
 class GameLobby {

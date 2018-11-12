@@ -2,7 +2,7 @@ import * as express from 'express';
 import * as http from 'http';
 import * as path from 'path';
 import * as socketIO from 'socket.io';
-import * as SocketContract from '../shared/socketcontract';
+import * as SocketContract from '../shared/socketContract';
 import Lobby from './lobby';
 
 const app = express();

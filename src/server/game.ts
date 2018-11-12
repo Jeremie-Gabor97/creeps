@@ -1,4 +1,4 @@
-import * as SocketContract from '../shared/socketcontract';
+import * as SocketContract from '../shared/socketContract';
 import GameLobby from './gamelobby';
 import Lobby, { IPlayerState, Location } from './lobby';
 

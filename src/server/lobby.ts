@@ -1,5 +1,5 @@
 import * as socketIO from 'socket.io';
-import * as SocketContract from '../shared/socketcontract';
+import * as SocketContract from '../shared/socketContract';
 import { SocketEvent } from '../shared/socketContract';
 import { Dictionary } from '../shared/utils';
 import Game from './game';
