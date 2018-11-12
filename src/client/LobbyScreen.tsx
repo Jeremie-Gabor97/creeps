@@ -3,13 +3,14 @@ import { observable } from 'mobx';
 import { observer } from 'mobx-react';
 import * as React from 'react';
 
-import * as SocketContract from '../shared/socketcontract';
-import { SocketEvent } from '../shared/socketcontract';
-import { changeAvatar, updateGameLobby, updateLobby } from './actions';
-import { ScreenType } from './app';
-import RootStore, { lobbyStore } from './stores';
+import * as SocketContract from '../shared/socketContract';
+import { SocketEvent } from '../shared/socketContract';
+import { changeAvatar, updateGameLobby, updateLobby } from './Actions';
+import { ScreenType } from './App';
+import RadioGroup from './RadioGroup';
+import RootStore, { lobbyStore } from './Stores';
 
-import './lobbyscreen.css';
+import './LobbyScreen.css';
 
 export interface ILobbyScreenProps {
 	socket: SocketIOClient.Socket;
@@ -19,8 +20,14 @@ export interface ILobbyScreenProps {
 @observer
 class LobbyScreen extends React.Component<ILobbyScreenProps> {
 	usernameInput: HTMLInputElement | null;
+	createTitleRef: HTMLInputElement | null;
 	@observable selectedTab: 'lobby' | 'progress' | 'create' = 'lobby';
 	@observable joinFailed: string = '';
+	@observable createTitle: string = 'Sweet Game';
+	@observable createNumTeams: string = '2';
+	@observable createMaxPlayers: string = '4';
+	@observable createMap: string = 'Test Map';
+	@observable lobbyInfoId: string = '';
 
 	componentDidMount() {
 		this.attachSocketListeners();
@@ -80,33 +87,60 @@ class LobbyScreen extends React.Component<ILobbyScreenProps> {
 	}
 
 	onClickCreate = () => {
+		// TODO: validate this
+		const numTeams = parseInt(this.createNumTeams, 10);
+		const maxPlayersPerTeam = parseInt(this.createMaxPlayers, 10);
 		const data: SocketContract.ICreateGameData = {
-			map: 'test',
-			numTeams: 2,
-			maxPlayersPerTeam: 4,
-			title: 'test title',
+			map: this.createMap,
+			numTeams,
+			maxPlayersPerTeam,
+			title: this.createTitle,
 		};
 		this.props.socket.emit(SocketEvent.CreateGame, data);
 	}
 
 	onClickAvatarNext = () => {
-		changeAvatar(true);
+		changeAvatar(this.props.socket, true);
 	}
 
 	onClickAvatarPrev = () => {
-		changeAvatar(false);
+		changeAvatar(this.props.socket, false);
 	}
 
-	onJoinLobby = (gameLobbyId: string) => {
+	onClickJoinLobby = (gameLobbyId: string) => {
 		const data: SocketContract.IJoinGameLobbyData = {
 			gameLobbyId
 		};
 		this.props.socket.emit(SocketEvent.JoinGame, data);
 	}
 
+	onClickLobbyInfo = (gameLobbyId: string) => {
+		this.lobbyInfoId = gameLobbyId;
+	}
+
+	onClickLobbyInfoPanelClose = () => {
+		this.lobbyInfoId = '';
+	}
+
+	onChangeCreateTitle = (e: React.ChangeEvent<HTMLInputElement>) => {
+		this.createTitle = e.target.value;
+	}
+
+	onChangeCreateNumTeams = (value: string) => {
+		this.createNumTeams = value;
+	}
+
+	onChangeCreateMaxPlayers = (value: string) => {
+		this.createMaxPlayers = value;
+	}
+
+	onChangeCreateMap = (value: string) => {
+		this.createMap = value;
+	}
+
 	getBodyLobby() {
 		return (
-			<div className={'LobbyScreen-body-lobby'}>
+			<div className={'LobbyScreen-body-lobby'} key={'body-lobby'}>
 				{lobbyStore.lobbies.length === 0 && (
 					<div>{'No games found'}</div>
 				)}
@@ -120,7 +154,10 @@ class LobbyScreen extends React.Component<ILobbyScreenProps> {
 							<div className={'LobbyScreen-lobbyPlayers'}>
 								({lobby.numPlayers + '/' + lobby.maxPlayers})
 							</div>
-							<div className={'LobbyScreen-lobbyJoin'} onClick={() => { this.onJoinLobby(lobby.id); }}>
+							<div className={'LobbyScreen-lobbyInfo'} onClick={() => { this.onClickLobbyInfo(lobby.id); }}>
+								{'Info'}
+							</div>
+							<div className={'LobbyScreen-lobbyJoin'} onClick={() => { this.onClickJoinLobby(lobby.id); }}>
 								{'Join'}
 							</div>
 						</div>
@@ -132,7 +169,7 @@ class LobbyScreen extends React.Component<ILobbyScreenProps> {
 
 	getBodyProgress() {
 		return (
-			<div className={'LobbyScreen-body-progress'}>
+			<div className={'LobbyScreen-body-progress'} key={'body-progress'}>
 				{'In progress games'}
 			</div>
 		);
@@ -140,10 +177,86 @@ class LobbyScreen extends React.Component<ILobbyScreenProps> {
 
 	getBodyCreate() {
 		return (
-			<div className={'LobbyScreen--body-create'}>
+			<div className={'LobbyScreen--body-create'} key={'body-create'}>
+				<div className={'LobbyScreen-createTitleLabel'}>{'Game Title'}</div>
+				<input
+					className={'LobbyScreen-createTitle'}
+					value={this.createTitle}
+					onChange={this.onChangeCreateTitle}
+				/>
+				<RadioGroup
+					title={'Map'}
+					options={['test']}
+					value={this.createMap}
+					onChangeValue={this.onChangeCreateMap}
+				/>
+				<RadioGroup
+					title={'Number of teams'}
+					options={['2', '4']}
+					value={this.createNumTeams}
+					onChangeValue={this.onChangeCreateNumTeams}
+				/>
+				<RadioGroup
+					title={'Max players per team'}
+					options={['1', '2', '3', '4']}
+					value={this.createMaxPlayers}
+					onChangeValue={this.onChangeCreateMaxPlayers}
+				/>
 				<div className={'LobbyScreen-createGame button'} onClick={this.onClickCreate}>
 					{'Create Game'}
 				</div>
+			</div>
+		);
+	}
+
+	getSidePanelLobby() {
+		if (this.lobbyInfoId) {
+			const lobbyIndex = lobbyStore.lobbies.findIndex(lobby => lobby.id === this.lobbyInfoId);
+			if (lobbyIndex >= 0) {
+				const lobby = lobbyStore.lobbies[lobbyIndex];
+				return (
+					<div className={'LobbyScreen-lobbyInfoPanel'}>
+						<div>{lobby.title}</div>
+						<hr/>
+						<div className={'LobbyScreen-lobbyInfoPanelNames'}>
+							{lobby.playerNames.map(username => {
+								return (
+									<div>{username}</div>
+								);
+							})}
+						</div>
+						<div className={'LobbyScreen-lobbyInfoPanelClose button'} onClick={this.onClickLobbyInfoPanelClose}>
+							{'Close'}
+						</div>
+					</div>
+				);
+			}
+			else {
+				this.lobbyInfoId = '';
+				return this.getNumPlayers();
+			}
+		}
+		else {
+			return this.getNumPlayers();
+		}
+	}
+
+	getSidePanelProgress() {
+		return this.getNumPlayers();
+	}
+
+	getSidePanelCreate() {
+		return this.getNumPlayers();
+	}
+
+	getNumPlayers = () => {
+		return (
+			<div className={'LobbyScreen-numPlayers'} key={'getNumPlayers'}>
+				<div>{'Players Online'}</div>
+				<hr />
+				<div>{'Lobby: ' + lobbyStore.numPlayers.lobby}</div>
+				<div>{'Joining games: ' + lobbyStore.numPlayers.gameLobby}</div>
+				<div>{'In game: ' + lobbyStore.numPlayers.game}</div>
 			</div>
 		);
 	}
@@ -189,13 +302,9 @@ class LobbyScreen extends React.Component<ILobbyScreenProps> {
 						{this.selectedTab === 'create' && this.getBodyCreate()}
 					</div>
 					<div className={'LobbyScreen-sidePanel'}>
-						<div className={'LobbyScreen-numPlayers'}>
-							<div>{'Players Online'}</div>
-							<hr />
-							<div>{'Lobby: ' + lobbyStore.numPlayers.lobby}</div>
-							<div>{'Joining games: ' + lobbyStore.numPlayers.gameLobby}</div>
-							<div>{'In game: ' + lobbyStore.numPlayers.game}</div>
-						</div>
+						{this.selectedTab === 'lobby' && this.getSidePanelLobby()}
+						{this.selectedTab === 'progress' && this.getSidePanelProgress()}
+						{this.selectedTab === 'create' && this.getSidePanelCreate()}
 					</div>
 				</div>
 				{this.joinFailed && (

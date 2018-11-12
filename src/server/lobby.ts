@@ -16,6 +16,7 @@ export interface IGameLobbyState {
 }
 
 export interface IPlayerState {
+	avatarIndex: number;
 	username: string;
 	socket: socketIO.Socket;
 	location: Location;
@@ -52,7 +53,7 @@ class Lobby {
 						const gameLobby = this.gameLobbies[gameLobbyId];
 						if (gameLobby) {
 							gameLobby.handleDisconnect(player);
-							this.handleDisconnect(player);	
+							this.handleDisconnect(player);
 						}
 						break;
 					case Location.Game:
@@ -82,6 +83,10 @@ class Lobby {
 		player.socket.on(SocketEvent.LeaveLobby, () => {
 			this.removePlayer(player);
 		});
+
+		player.socket.on(SocketEvent.ChangeAvatar, (data: SocketContract.IChangeAvatarData) => {
+			this.changeAvatar(player, data);
+		});
 	}
 
 	removeSocketListeners = (player: IPlayerState) => {
@@ -97,6 +102,7 @@ class Lobby {
 
 	loginPlayer = (socket: socketIO.Socket, username: string) => {
 		const newPlayer = {
+			avatarIndex: 0,
 			username,
 			socket,
 			location: Location.Lobby,
@@ -173,6 +179,12 @@ class Lobby {
 		}
 	}
 
+	changeAvatar = (player: IPlayerState, data: SocketContract.IChangeAvatarData) => {
+		if (data.index >= 0 && data.index < SocketContract.NUM_AVATARS) {
+			player.avatarIndex = data.index;
+		}
+	}
+
 	getNumPlayers() {
 		let players = {
 			lobby: 0,
@@ -204,6 +216,7 @@ class Lobby {
 				id: gameLobby.id,
 				numPlayers: gameLobby.players.length,
 				maxPlayers: gameLobby.numTeams * gameLobby.maxPlayersPerTeam,
+				playerNames: gameLobby.players.map(player => player.username),
 				title: gameLobby.title
 			};
 		});

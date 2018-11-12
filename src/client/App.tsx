@@ -4,13 +4,13 @@ import * as React from 'react';
 import * as ReactCSSTransitionGroup from 'react-addons-css-transition-group';
 import * as io from 'socket.io-client';
 
-import * as SocketContract from '../shared/socketcontract';
-import GameLobbyScreen from './gamelobbyscreen';
-import LobbyScreen from './lobbyscreen';
-import MainScreen from './mainscreen';
-import RootStore from './stores';
+import * as SocketContract from '../shared/socketContract';
+import GameLobbyScreen from './GameLobbyScreen';
+import LobbyScreen from './LobbyScreen';
+import MainScreen from './MainScreen';
+import RootStore from './Stores';
 
-import './app.css';
+import './App.css';
 
 export enum ScreenType {
 	Main,

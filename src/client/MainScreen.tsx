@@ -2,12 +2,12 @@ import { observable } from 'mobx';
 import { observer } from 'mobx-react';
 import * as React from 'react';
 
-import * as SocketContract from '../shared/socketcontract';
-import { SocketEvent } from '../shared/socketcontract';
-import { confirmUsername, updateLobby } from './actions';
-import { ScreenType } from './app';
+import * as SocketContract from '../shared/socketContract';
+import { SocketEvent } from '../shared/socketContract';
+import { confirmUsername, updateLobby } from './Actions';
+import { ScreenType } from './App';
 
-import './mainscreen.css';
+import './MainScreen.css';
 
 export interface IMainScreenProps {
 	socket: SocketIOClient.Socket;

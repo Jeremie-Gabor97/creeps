@@ -24,6 +24,7 @@ export const SocketEvent = {
 	JoinGame: 'joinGame',
 	JoinFailed: 'joinFailed',
 	LobbyUpdate: 'lobbyUpdate',
+	ChangeAvatar: 'changeAvatar',
 	// GameLobby Events
 	StartGame: 'startGame',
 	LeaveGameLobby: 'leaveGameLobby',
@@ -68,6 +69,7 @@ export interface ILobbyData {
 	id: string;
 	numPlayers: number;
 	maxPlayers: number;
+	playerNames: string[];
 	title: string;
 }
 
@@ -83,6 +85,10 @@ export interface ILobbyUpdateData {
 	arriving: boolean;
 }
 
+export interface IChangeAvatarData {
+	index: number;
+}
+
 export const enum Team {
 	Blue,
 	Red,
@@ -95,9 +101,15 @@ export interface ISwitchTeamData {
 }
 
 export interface IGameLobbyPlayer {
+	avatarIndex: number;
+	username: string;
 	team: Team;
 }
 
 export interface IGameLobbyUpdateData {
+	title: string;
+	map: string;
+	numTeams: number;
+	maxPlayersPerTeam: number;
 	players: Dictionary<IGameLobbyPlayer>;
 }

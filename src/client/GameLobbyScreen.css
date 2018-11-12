@@ -1,0 +1,101 @@
+.GameLobbyScreen {
+	display: flex;
+	align-items: center;
+	padding-top: 10px;
+	height: 400px;
+}
+
+.GameLobbyScreen-teams {
+	flex: 1 0 0;
+	display: flex;
+	flex-direction: column;
+	padding: 15px;
+	height: 100%;
+}
+
+.GameLobbyScreen-team {
+	flex: 0 0 auto;
+	padding: 10px;
+	border-radius: 5px;
+	border:1px solid grey;
+	background-color: rgba(255, 255, 255, 0.7);
+}
+
+.GameLobbyScreen-blueTeam .GameLobbyScreen-player,
+.GameLobbyScreen-blueTeam .GameLobbyScreen-emptyplayer {
+	background: #A3DAFF;
+}
+.GameLobbyScreen-redTeam .GameLobbyScreen-player,
+.GameLobbyScreen-redTeam .GameLobbyScreen-emptyplayer {
+	background: #FF7F7F;
+}
+.GameLobbyScreen-greenTeam .GameLobbyScreen-player,
+.GameLobbyScreen-greenTeam .GameLobbyScreen-emptyplayer {
+	background: #7FFF8E;
+}
+.GameLobbyScreen-yellowTeam .GameLobbyScreen-player,
+.GameLobbyScreen-yellowTeam .GameLobbyScreen-emptyplayer {
+	background: #DAFF7F;
+}
+
+.GameLobbyScreen-player,
+.GameLobbyScreen-emptyPlayer {
+	display: flex;
+	align-items: center;
+	border: 1px solid grey;
+	margin-top: 5px;
+	height: 28px;
+}
+.GameLobbyScreen-emptyPlayer {
+	border: 1px dashed grey;
+	padding-left: 10px;
+}
+.GameLobbyScreen-player:first-child,
+.GameLobbyScreen-emptyPlayer:first-child {
+	margin-top: 0;
+}
+
+.GameLobbyScreen-playerAvatar {
+	border-right: 1px solid grey;
+	width: 27px;
+	height: 26px;
+	margin-right: 5px;
+}
+
+.GameLobbyScreen-info {
+	flex: 0 0 auto;
+	display: flex;
+	flex-direction: column;
+	width: 150px;
+	padding: 5px;
+	height: 100%;
+}
+
+.GameLobbyScreen-spacer {
+	flex: 1 1 0;
+}
+
+.GameLobbyScreen-switchColor {
+	width: 60px;
+	height: 60px;
+	border: 5px solid transparent;
+	background-clip: content-box;
+	display: inline-block;
+	cursor: pointer;
+}
+.GameLobbyScreen-switchColor--selected {
+	border: 5px solid black;
+}
+
+.GameLobbyScreen-switchColorBlue {
+	background-color: #A3DAFF;
+}
+.GameLobbyScreen-switchColorRed {
+	background-color: #FF7F7F;
+}
+.GameLobbyScreen-switchColorGreen {
+	background-color: #7FFF8E;
+}
+.GameLobbyScreen-switchColorYellow {
+	background-color: #DAFF7F;
+}

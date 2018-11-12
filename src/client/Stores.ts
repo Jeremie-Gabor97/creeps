@@ -1,5 +1,5 @@
 import { observable } from 'mobx';
-import * as SocketContract from '../shared/socketcontract';
+import * as SocketContract from '../shared/socketContract';
 import { Dictionary } from '../shared/utils';
 
 class RootStore {
@@ -35,6 +35,10 @@ class LobbyStore {
 class GameLobbyStore {
 	rootStore: RootStore;
 
+	@observable title: string = '';
+	@observable map: string = '';
+	@observable numTeams: number = 2;
+	@observable maxPlayersPerTeam: number = 4;
 	@observable players: Dictionary<SocketContract.IGameLobbyPlayer> = {};
 
 	constructor(root: RootStore) {

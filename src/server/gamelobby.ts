@@ -147,11 +147,17 @@ class GameLobby {
 
 	getState(): SocketContract.IGameLobbyUpdateData {
 		const state: SocketContract.IGameLobbyUpdateData = {
+			title: this.title,
+			map: this.map,
+			numTeams: this.numTeams,
+			maxPlayersPerTeam: this.maxPlayersPerTeam,
 			players: {}
 		};
 		this.players.forEach(player => {
 			if (player.gameLobbyState) {
 				state.players[player.username] = {
+					username: player.username,
+					avatarIndex: player.avatarIndex,
 					team: player.gameLobbyState.team
 				};
 			}

@@ -19,7 +19,7 @@
 	cursor: pointer;
 	background: white;
 	border: 1px solid grey;
-	height: 26px;
+	height: 28px;
 }
 
 .LobbyScreen-avatarPrev:hover,
@@ -28,8 +28,8 @@
 }
 
 .LobbyScreen-header-avatar {
-	width: 26px;
-	height: 26px;
+	width: 28px;
+	height: 28px;
 	border: 1px solid grey;
 	margin: 0 1px;
 }
@@ -64,7 +64,7 @@
 
 .LobbyScreen-bodyRow {
 	display: flex;
-	height: 50%;
+	height: 282px;
 }
 
 .LobbyScreen-body {
@@ -74,6 +74,12 @@
 	background: rgba(255, 255, 255, 0.7);
 	border: 1px solid grey;
 	width: 70%;
+}
+
+.LobbyScreen-body-lobby,
+.LobbyScreen-body-progress {
+	height: 100%;
+	overflow: auto;
 }
 
 .LobbyScreen-sidePanel {
@@ -95,7 +101,10 @@
 	height: 35px;
 	background: white;
 	border: 1px solid grey;
-	margin-bottom: 10px;
+	margin-top: 10px;
+}
+.LobbyScreen-lobby:first-child {
+	margin-top: 0;
 }
 
 .LobbyScreen-lobbyTitle {
@@ -110,7 +119,8 @@
 	padding: 0px 10px;
 }
 
-.LobbyScreen-lobbyJoin {
+.LobbyScreen-lobbyJoin,
+.LobbyScreen-lobbyInfo {
 	height: 100%;
 	border-left: 1px solid grey;
 	cursor: pointer;
@@ -120,6 +130,32 @@
 	background: #dfdfdf;
 }
 
-.LobbyScreen-lobbyJoin:hover {
+.LobbyScreen-lobbyJoin:hover,
+.LobbyScreen-lobbyInfo:hover {
 	background: lightgrey;
+}
+
+.LobbyScreen-lobbyInfoPanel {
+	overflow: auto;
+}
+
+.LobbyInfoPanelClose {
+	text-align: center;
+}
+
+.LobbyScreen-createTitle {
+	margin-top: 2px;
+}
+
+.LobbyScreen-createGame {
+	margin-top: 10px;
+	display: inline-block;
+}
+
+.LobbyScreen .RadioGroup {
+	margin-top: 10px;
+}
+
+.LobbyScreen .RadioGroup-options {
+	margin-top: 2px;
 }
