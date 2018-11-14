@@ -1,0 +1,25 @@
+.ChatBox {
+	flex: 1 1 0;
+	display: flex;
+	flex-direction: column;
+
+	background-color: rgba(255, 255, 255, 0.7);
+	border: 1px solid grey;
+	border-radius: 8px;
+	padding: 10px;
+}
+
+.ChatBox-messages {
+	flex: 1 1 0;
+	overflow: auto;
+}
+
+.ChatBox-inputContainer {
+	flex: 0 0 auto;
+	display: flex;
+}
+
+.ChatBox-input {
+	flex: 1 1 0;
+	margin-right: 2px;
+}

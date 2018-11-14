@@ -2,11 +2,13 @@ import classNames from 'classnames';
 import { observable } from 'mobx';
 import { observer } from 'mobx-react';
 import * as React from 'react';
+import * as ReactCSSTransitionGroup from 'react-addons-css-transition-group';
 
 import * as SocketContract from '../shared/socketContract';
 import { SocketEvent } from '../shared/socketContract';
-import { updateGameLobby, updateLobby } from './Actions';
+import { addGameLobbyChat, startGameTimer, updateGameLobby, updateLobby } from './Actions';
 import { ScreenType } from './App';
+import ChatBox from './ChatBox';
 import rootStore, { gameLobbyStore } from './Stores';
 
 import './GameLobbyScreen.css';
@@ -30,11 +32,26 @@ class GameLobbyScreen extends React.Component<IGameLobbyScreenProps> {
 	attachSocketListeners() {
 		this.props.socket.on(SocketEvent.LobbyUpdate, this.onLobbyUpdate);
 		this.props.socket.on(SocketEvent.GameLobbyUpdate, this.onGameLobbyUpdate);
+		this.props.socket.on(SocketEvent.StartingGame, this.onStartingGame);
+		this.props.socket.on(SocketEvent.ReceiveChat, this.onReceiveChat);
 	}
 
 	removeSocketListeners() {
 		this.props.socket.removeEventListener(SocketEvent.LobbyUpdate, this.onLobbyUpdate);
 		this.props.socket.removeEventListener(SocketEvent.GameLobbyUpdate, this.onGameLobbyUpdate);
+		this.props.socket.removeEventListener(SocketEvent.StartingGame, this.onStartingGame);
+		this.props.socket.removeEventListener(SocketEvent.ReceiveChat, this.onReceiveChat);
+	}
+
+	onSendChat = (message: string) => {
+		const data: SocketContract.ISendChatData = {
+			message
+		};
+		this.props.socket.emit(SocketEvent.SendChat, data);
+	}
+
+	onReceiveChat = (data: SocketContract.IReceiveChatData) => {
+		addGameLobbyChat(data);
 	}
 
 	onLobbyUpdate = (data: SocketContract.ILobbyUpdateData) => {
@@ -46,12 +63,23 @@ class GameLobbyScreen extends React.Component<IGameLobbyScreenProps> {
 		updateGameLobby(data);
 	}
 
+	onStartingGame = (data: SocketContract.IStartingGameData) => {
+		startGameTimer(data);
+	}
+
 	onClickLeave = () => {
 		this.props.socket.emit(SocketEvent.LeaveGameLobby);
 	}
 
 	onClickStart = () => {
 		this.props.socket.emit(SocketEvent.StartGame);
+	}
+
+	onClickCreep = (index: number) => {
+		const data: SocketContract.ISelectCreepData = {
+			index
+		};
+		this.props.socket.emit(SocketEvent.SelectCreep, data);
 	}
 
 	switchTeam = (team: number) => {
@@ -142,51 +170,82 @@ class GameLobbyScreen extends React.Component<IGameLobbyScreenProps> {
 
 		return (
 			<div className={'GameLobbyScreen'}>
-				<div className={'GameLobbyScreen-teams'}>
-					<div className={'GameLobbyScreen-spacer'}/>
-					{this.getTeam(players, 0)}
-					{gameLobbyStore.numTeams > 2 && <div className={'GameLobbyScreen-spacer'}/>}
-					{gameLobbyStore.numTeams > 2 && this.getTeam(players, 1)}
-					<div className={'GameLobbyScreen-spacer'}/>
-				</div>
-				<div className={'GameLobbyScreen-info'}>
-					<div className={'GameLobbyScreen-title'}>
-						{gameLobbyStore.title}
+				<div className={'GameLobbyScreen-main'}>
+					<div className={'GameLobbyScreen-teams'}>
+						<div className={'GameLobbyScreen-spacer'} />
+						{this.getTeam(players, 0)}
+						{gameLobbyStore.numTeams > 2 && <div className={'GameLobbyScreen-spacer'} />}
+						{gameLobbyStore.numTeams > 2 && this.getTeam(players, 1)}
+						<div className={'GameLobbyScreen-spacer'} />
 					</div>
-					<div className={'GameLobbyScreen-map'}>
-						{gameLobbyStore.map}
-					</div>
-					<div className={'GameLobbyScreen-numPlayers'}>
-						{this.getVersusString()}
-					</div>
-					<div className={'GameLobbyScreen-spacer'}/>
-					<div className={'GameLobbyScreen-switch'}>
-						<div className={switchBlueClasses} onClick={() => { this.switchTeam(0); }} />
-						{gameLobbyStore.numTeams > 2 && (
-							<div className={switchGreenClasses} onClick={() => { this.switchTeam(2); }} />
+					<div className={'GameLobbyScreen-info'}>
+						<div className={'GameLobbyScreen-title'}>
+							{gameLobbyStore.title}
+						</div>
+						<div className={'GameLobbyScreen-map'}>
+							{gameLobbyStore.map}
+						</div>
+						<div className={'GameLobbyScreen-numPlayers'}>
+							{this.getVersusString()}
+						</div>
+						<div className={'GameLobbyScreen-mainContainer'}>
+							<ReactCSSTransitionGroup
+								transitionName={'fadez'}
+								transitionEnterTimeout={1000}
+								transitionLeaveTimeout={1000}
+							>
+								{gameLobbyStore.starting && (
+									<div className={'GameLobbyScreen-creepContainer'} key={'creep'}>
+										<div className={'GameLobbyScreen-timer'}>
+											{gameLobbyStore.timeLeft}
+										</div>
+										<div className={'GameLobbyScreen-creeps'}>
+											{SocketContract.CREEP_NAMES.map((creepName, index) => {
+												const creep = SocketContract.Creeps[creepName];
+												return (
+													<div className={'GameLobbyScreen-creep'} key={creep.name} onClick={() => { this.onClickCreep(index); }}>
+														<img src={`assets/icons/${creep.name}.jpg`} className={'GameLobbyScreen-creepImage'} />
+													</div>
+												);
+											})}
+										</div>
+									</div>
+								)}
+								{!gameLobbyStore.starting && (
+									<div className={'GameLobbyScreen-switchContainer'} key={'switch'}>
+										<div className={'GameLobbyScreen-switch'}>
+											<div className={switchBlueClasses} onClick={() => { this.switchTeam(0); }} />
+											{gameLobbyStore.numTeams > 2 && (
+												<div className={switchGreenClasses} onClick={() => { this.switchTeam(2); }} />
+											)}
+											<div className={switchRedClasses} onClick={() => { this.switchTeam(1); }} />
+											{gameLobbyStore.numTeams > 2 && (
+												<div className={switchYellowClasses} onClick={() => { this.switchTeam(3); }} />
+											)}
+										</div>
+									</div>
+								)}
+							</ReactCSSTransitionGroup>
+						</div>
+						{gameLobbyStore.host === rootStore.username && (
+							<div className={'GameLobbyScreen-start button'} onClick={this.onClickStart}>
+								{'Start Game'}
+							</div>
 						)}
-						<div className={switchRedClasses} onClick={() => { this.switchTeam(1); }} />
-						{gameLobbyStore.numTeams > 2 && (
-							<div className={switchYellowClasses} onClick={() => { this.switchTeam(3); }} />
-						)}
+						<div className={'GameLobbyScreen-leave button'} onClick={this.onClickLeave}>
+							{'Leave Game'}
+						</div>
 					</div>
-					<div className={'GameLobbyScreen-spacer'}/>
-					<div className={'GameLobbyScreen-start button'} onClick={this.onClickStart}>
-						{'Start Game'}
-					</div>
-					<div className={'GameLobbyScreen-leave button'} onClick={this.onClickLeave}>
-						{'Leave Game'}
+					<div className={'GameLobbyScreen-teams'}>
+						<div className={'GameLobbyScreen-spacer'} />
+						{gameLobbyStore.numTeams === 2 && this.getTeam(players, 1)}
+						{gameLobbyStore.numTeams > 2 && this.getTeam(players, 2)}
+						{gameLobbyStore.numTeams > 3 && <div className={'GameLobbyScreen-spacer'} />}
+						{gameLobbyStore.numTeams > 3 && this.getTeam(players, 3)}
+						<div className={'GameLobbyScreen-spacer'} />
 					</div>
 				</div>
-				<div className={'GameLobbyScreen-teams'}>
-					<div className={'GameLobbyScreen-spacer'}/>
-					{gameLobbyStore.numTeams === 2 && this.getTeam(players, 1)}
-					{gameLobbyStore.numTeams > 2 && this.getTeam(players, 2)}
-					{gameLobbyStore.numTeams > 3 && <div className={'GameLobbyScreen-spacer'}/>}
-					{gameLobbyStore.numTeams > 3 && this.getTeam(players, 3)}
-					<div className={'GameLobbyScreen-spacer'}/>
-				</div>
-
+				<ChatBox messages={gameLobbyStore.chatMessages} onSendChat={this.onSendChat} />
 			</div >
 		);
 	}

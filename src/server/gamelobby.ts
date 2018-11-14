@@ -1,3 +1,4 @@
+import { cloneDeep } from 'lodash';
 import * as SocketContract from '../shared/socketContract';
 import { SocketEvent } from '../shared/socketContract';
 import Lobby, { IPlayerState, Location } from './lobby';
@@ -11,6 +12,9 @@ class GameLobby {
 	maxPlayersPerTeam: number;
 	numTeams: number;
 	title: string;
+	starting: boolean;
+	startDuration: number;
+	startTimeout: NodeJS.Timer;
 
 	constructor(lobby: Lobby, host: IPlayerState, gameLobbyId: string, options: SocketContract.ICreateGameData) {
 		this.lobby = lobby;
@@ -21,6 +25,8 @@ class GameLobby {
 		this.numTeams = options.numTeams;
 		this.map = options.map;
 		this.title = options.title;
+		this.starting = false;
+		this.startDuration = 5;
 		this.addPlayer(host, true);
 	}
 
@@ -38,42 +44,67 @@ class GameLobby {
 		player.socket.on(SocketEvent.SwitchTeam, (data: SocketContract.ISwitchTeamData) => {
 			this.switchPlayer(player, data.team);
 		});
+
+		player.socket.on(SocketEvent.SelectCreep, (data: SocketContract.ISelectCreepData) => {
+			this.selectCreep(player, data.index);
+		});
+
+		player.socket.on(SocketEvent.SendChat, (data: SocketContract.ISendChatData) => {
+			this.chat(player, data.message);
+		});
 	}
 
 	removeSocketListeners(player: IPlayerState) {
 		player.socket.removeAllListeners(SocketEvent.StartGame);
 		player.socket.removeAllListeners(SocketEvent.LeaveGameLobby);
 		player.socket.removeAllListeners(SocketEvent.SwitchTeam);
+		player.socket.removeAllListeners(SocketEvent.SendChat);
 	}
 
 	startGame = () => {
-		const teamCounts = this.getTeamCounts();
-		const numPlayers = teamCounts[0];
-		let evenTeams = true;
+		if (this.starting === false) {
+			const teamCounts = this.getTeamCounts();
+			const numPlayers = teamCounts[0];
+			let evenTeams = true;
 
-		teamCounts.forEach(count => {
-			if (count !== numPlayers) {
-				evenTeams = false;
-			}
-		});
-
-		if (evenTeams) {
-			this.players.forEach(player => {
-				this.removeSocketListeners(player);
+			teamCounts.forEach(count => {
+				if (count !== numPlayers) {
+					evenTeams = false;
+				}
 			});
-			this.lobby.startGame(this);
+
+			if (evenTeams) {
+				this.starting = true;
+				this.broadcastStarting();
+				this.startTimeout = setTimeout(this.actuallyStartGame, this.startDuration * 1000);
+			}
 		}
+	}
+
+	actuallyStartGame = () => {
+		this.players.forEach(player => {
+			this.removeSocketListeners(player);
+		});
+		this.lobby.startGame(this);
 	}
 
 	addPlayer(player: IPlayerState, isHost: boolean) {
 		// add the player
 		const teamCounts = this.getTeamCounts();
-		const team = teamCounts.findIndex(count => count < this.maxPlayersPerTeam);
-		if (team >= 0) {
+		let teamIndex = -1;
+		let teamPlayers = this.maxPlayersPerTeam;
+		teamCounts.forEach((count, index) => {
+			if (count < teamPlayers) {
+				teamIndex = index;
+				teamPlayers = count;
+			}
+		});
+		if (teamIndex >= 0) {
 			player.location = Location.GameLobby;
 			player.locationId = this.id;
 			player.gameLobbyState = {
-				team: team
+				team: teamIndex,
+				creep: SocketContract.Creep.Normie
 			};
 			this.players.push(player);
 			this.attachSocketListeners(player, isHost);
@@ -84,46 +115,82 @@ class GameLobby {
 	handleDisconnect = (player: IPlayerState) => {
 		const isHost = player.username === this.players[0].username;
 		console.log(`player ${player.username} disconnected from gameLobby`);
-		if (isHost) {
-			this.removeHost();
+		if (this.starting) {
+			this.ghostPlayer(player);
 		}
 		else {
-			this.removePlayer(player, true);
+			if (isHost) {
+				this.removeHost();
+			}
+			else {
+				this.removePlayer(player, true);
+			}
 		}
 	}
 
 	removeHost = () => {
-		for (let i = this.players.length - 1; i >= 0; i--) {
-			const curPlayer = this.players[i];
-			this.removePlayer(curPlayer, false);
+		if (this.starting === false) {
+			for (let i = this.players.length - 1; i >= 0; i--) {
+				const curPlayer = this.players[i];
+				this.removePlayer(curPlayer, false);
+			}
+			this.lobby.removeGameLobby(this.id);
 		}
-		this.lobby.removeGameLobby(this.id);
+		else {
+			this.ghostPlayer(this.players[0]);
+		}
 	}
 
 	removePlayer(player: IPlayerState, broadcastState: boolean) {
+		if (this.starting === false) {
+			this.removeSocketListeners(player);
+			const playersIndex = this.players.indexOf(player);
+			if (playersIndex >= 0) {
+				player.gameLobbyState = null;
+				this.players.splice(playersIndex, 1);
+				this.lobby.addPlayer(player);
+				if (broadcastState) {
+					this.broadcastState();
+				}
+				console.log(`player ${player.username} left gameLobby`);
+			}
+		}
+		else {
+			this.ghostPlayer(player);
+		}
+	}
+
+	ghostPlayer(player: IPlayerState) {
 		this.removeSocketListeners(player);
 		const playersIndex = this.players.indexOf(player);
 		if (playersIndex >= 0) {
-			player.gameLobbyState = null;
-			this.players.splice(playersIndex, 1);
-			this.lobby.addPlayer(player);
-			if (broadcastState) {
-				this.broadcastState();
-			}
-			console.log(`player ${player.username} left gameLobby`);
+			const playerCopy = cloneDeep(player);
+			playerCopy.disconnected = true;
+			playerCopy.socket = null;
+			this.players[playersIndex] = playerCopy;
 		}
 	}
 
 	switchPlayer(player: IPlayerState, teamNum: SocketContract.Team) {
-		if (teamNum < this.numTeams && player.gameLobbyState && player.gameLobbyState.team !== teamNum) {
-			// check if that team is available
-			const teamCounts = this.getTeamCounts();
-			if (teamCounts[teamNum] < this.maxPlayersPerTeam) {
-				player.gameLobbyState.team = teamNum;
-				this.broadcastState();
+		if (this.starting === false) {
+			if (teamNum < this.numTeams && player.gameLobbyState && player.gameLobbyState.team !== teamNum) {
+				// check if that team is available
+				const teamCounts = this.getTeamCounts();
+				if (teamCounts[teamNum] < this.maxPlayersPerTeam) {
+					player.gameLobbyState.team = teamNum;
+					this.broadcastState();
+				}
+				else {
+					player.socket.emit('switchTeamFailed');
+				}
 			}
-			else {
-				player.socket.emit('switchTeamFailed');
+		}
+	}
+
+	selectCreep(player: IPlayerState, index: number) {
+		if (this.starting) {
+			if (player.gameLobbyState) {
+				player.gameLobbyState.creep = index;
 			}
 		}
 	}
@@ -151,14 +218,16 @@ class GameLobby {
 			map: this.map,
 			numTeams: this.numTeams,
 			maxPlayersPerTeam: this.maxPlayersPerTeam,
-			players: {}
+			players: {},
+			host: this.players[0].username
 		};
 		this.players.forEach(player => {
 			if (player.gameLobbyState) {
 				state.players[player.username] = {
 					username: player.username,
 					avatarIndex: player.avatarIndex,
-					team: player.gameLobbyState.team
+					team: player.gameLobbyState.team,
+					creep: player.gameLobbyState.creep
 				};
 			}
 		});
@@ -169,6 +238,26 @@ class GameLobby {
 		const state = this.getState();
 		this.players.forEach(player => {
 			player.socket.emit(SocketEvent.GameLobbyUpdate, state);
+		});
+	}
+
+	broadcastStarting() {
+		this.players.forEach(player => {
+			const data: SocketContract.IStartingGameData = {
+				duration: this.startDuration
+			};
+			player.socket.emit(SocketEvent.StartingGame, data);
+		});
+	}
+
+	chat = (sender: IPlayerState, message: string) => {
+		const data: SocketContract.IReceiveChatData = {
+			username: sender ? sender.username : '',
+			message,
+			isSystem: sender ? false : true
+		};
+		this.players.forEach(player => {
+			player.socket.emit(SocketEvent.ReceiveChat, data);
 		});
 	}
 }

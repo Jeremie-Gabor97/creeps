@@ -13,6 +13,7 @@ export const enum Location {
 
 export interface IGameLobbyState {
 	team: SocketContract.Team;
+	creep: SocketContract.Creep;
 }
 
 export interface IPlayerState {
@@ -22,6 +23,7 @@ export interface IPlayerState {
 	location: Location;
 	locationId: string;
 	gameLobbyState?: IGameLobbyState;
+	disconnected: boolean;
 }
 
 class Lobby {
@@ -87,12 +89,18 @@ class Lobby {
 		player.socket.on(SocketEvent.ChangeAvatar, (data: SocketContract.IChangeAvatarData) => {
 			this.changeAvatar(player, data);
 		});
+
+		player.socket.on(SocketEvent.SendChat, (data: SocketContract.ISendChatData) => {
+			this.chat(player, data.message);
+		});
 	}
 
 	removeSocketListeners = (player: IPlayerState) => {
 		player.socket.removeAllListeners(SocketEvent.CreateGame);
 		player.socket.removeAllListeners(SocketEvent.JoinGame);
 		player.socket.removeAllListeners(SocketEvent.LeaveLobby);
+		player.socket.removeAllListeners(SocketEvent.ChangeAvatar);
+		player.socket.removeAllListeners(SocketEvent.SendChat);
 	}
 
 	handleDisconnect = (player: IPlayerState) => {
@@ -106,7 +114,8 @@ class Lobby {
 			username,
 			socket,
 			location: Location.Lobby,
-			locationId: ''
+			locationId: '',
+			disconnected: false
 		};
 		this.players[username] = newPlayer;
 		this.attachSocketListeners(newPlayer, true);
@@ -162,6 +171,12 @@ class Lobby {
 			if (gameLobby.isFull()) {
 				const data: SocketContract.IJoinFailedData = {
 					reason: SocketContract.JoinFailedReason.GameFull
+				};
+				player.socket.emit('joinFailed', data);
+			}
+			else if (gameLobby.starting) {
+				const data: SocketContract.IJoinFailedData = {
+					reason: SocketContract.JoinFailedReason.GameStarted
 				};
 				player.socket.emit('joinFailed', data);
 			}
@@ -234,6 +249,20 @@ class Lobby {
 			const player = this.players[username];
 			if (player.location === Location.Lobby) {
 				player.socket.emit(SocketEvent.LobbyUpdate, state);
+			}
+		});
+	}
+
+	chat = (sender: IPlayerState, message: string) => {
+		const data: SocketContract.IReceiveChatData = {
+			username: sender ? sender.username : '',
+			message,
+			isSystem: sender ? false : true
+		};
+		Object.keys(this.players).forEach(username => {
+			const player = this.players[username];
+			if (player.location === Location.Lobby) {
+				player.socket.emit(SocketEvent.ReceiveChat, data);
 			}
 		});
 	}

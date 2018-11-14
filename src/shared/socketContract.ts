@@ -12,8 +12,29 @@ export const AVATAR_NAMES = [
 	'sun',
 	'tree'
 ];
+export const NUM_CREEPS = 2;
+export const CREEP_NAMES = [
+	'Normie',
+	'Fattie'
+];
+export const enum Creep {
+	Normie,
+	Fattie
+}
+export interface ICreep {
+	name: string;
+	type: Creep;
+}
+export const Creeps: Dictionary<ICreep> = {
+	Normie: { name: 'Normie', type: Creep.Normie },
+	Fattie: { name: 'Fattie', type: Creep.Fattie }
+};
 
 export const SocketEvent = {
+	// Shared Events
+	SendChat: 'sendChat',
+	ReceiveChat: 'receiveChat',
+	// Main Events
 	ConfirmUsername: 'confirmUsername',
 	Login: 'login',
 	LoginFailed: 'loginFailed',
@@ -27,9 +48,11 @@ export const SocketEvent = {
 	ChangeAvatar: 'changeAvatar',
 	// GameLobby Events
 	StartGame: 'startGame',
+	StartingGame: 'startingGame',
 	LeaveGameLobby: 'leaveGameLobby',
 	SwitchTeam: 'switchTeam',
-	GameLobbyUpdate: 'gameLobbyUpdate'
+	GameLobbyUpdate: 'gameLobbyUpdate',
+	SelectCreep: 'selectCreep',
 };
 
 export enum LoginFailedReason {
@@ -58,7 +81,8 @@ export interface ICreateGameData {
 
 export enum JoinFailedReason {
 	NotExists,
-	GameFull
+	GameFull,
+	GameStarted
 }
 
 export interface IJoinFailedData {
@@ -104,6 +128,7 @@ export interface IGameLobbyPlayer {
 	avatarIndex: number;
 	username: string;
 	team: Team;
+	creep: Creep;
 }
 
 export interface IGameLobbyUpdateData {
@@ -112,4 +137,23 @@ export interface IGameLobbyUpdateData {
 	numTeams: number;
 	maxPlayersPerTeam: number;
 	players: Dictionary<IGameLobbyPlayer>;
+	host: string;
+}
+
+export interface ISelectCreepData {
+	index: number;
+}
+
+export interface IStartingGameData {
+	duration: number;
+}
+
+export interface ISendChatData {
+	message: string;
+}
+
+export interface IReceiveChatData {
+	username: string;
+	message: string;
+	isSystem: boolean;
 }

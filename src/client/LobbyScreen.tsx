@@ -5,8 +5,9 @@ import * as React from 'react';
 
 import * as SocketContract from '../shared/socketContract';
 import { SocketEvent } from '../shared/socketContract';
-import { changeAvatar, updateGameLobby, updateLobby } from './Actions';
+import { addLobbyChat, changeAvatar, updateGameLobby, updateLobby } from './Actions';
 import { ScreenType } from './App';
+import ChatBox from './ChatBox';
 import RadioGroup from './RadioGroup';
 import RootStore, { lobbyStore } from './Stores';
 
@@ -41,12 +42,25 @@ class LobbyScreen extends React.Component<ILobbyScreenProps> {
 		this.props.socket.on(SocketEvent.JoinFailed, this.onJoinFailed);
 		this.props.socket.on(SocketEvent.LobbyUpdate, this.onLobbyUpdate);
 		this.props.socket.on(SocketEvent.GameLobbyUpdate, this.onGameLobbyUpdate);
+		this.props.socket.on(SocketEvent.ReceiveChat, this.onReceiveChat);
 	}
 
 	removeSocketListeners() {
 		this.props.socket.removeEventListener(SocketEvent.JoinFailed, this.onJoinFailed);
 		this.props.socket.removeEventListener(SocketEvent.LobbyUpdate, this.onLobbyUpdate);
 		this.props.socket.removeEventListener(SocketEvent.GameLobbyUpdate, this.onGameLobbyUpdate);
+		this.props.socket.removeEventListener(SocketEvent.ReceiveChat, this.onReceiveChat);
+	}
+
+	onSendChat = (message: string) => {
+		const data: SocketContract.ISendChatData = {
+			message
+		};
+		this.props.socket.emit(SocketEvent.SendChat, data);
+	}
+
+	onReceiveChat = (data: SocketContract.IReceiveChatData) => {
+		addLobbyChat(data);
 	}
 
 	onJoinFailed = (data: SocketContract.IJoinFailedData) => {
@@ -56,6 +70,9 @@ class LobbyScreen extends React.Component<ILobbyScreenProps> {
 				break;
 			case SocketContract.JoinFailedReason.NotExists:
 				this.joinFailed = 'Unable to join game: game no longer exists';
+				break;
+			case SocketContract.JoinFailedReason.GameStarted:
+				this.joinFailed = 'Unable to join game: game already started';
 				break;
 			default:
 		}
@@ -217,7 +234,7 @@ class LobbyScreen extends React.Component<ILobbyScreenProps> {
 				return (
 					<div className={'LobbyScreen-lobbyInfoPanel'}>
 						<div>{lobby.title}</div>
-						<hr/>
+						<hr />
 						<div className={'LobbyScreen-lobbyInfoPanelNames'}>
 							{lobby.playerNames.map(username => {
 								return (
@@ -276,37 +293,40 @@ class LobbyScreen extends React.Component<ILobbyScreenProps> {
 
 		return (
 			<div className={'LobbyScreen'}>
-				<div className={'LobbyScreen-header'}>
-					<img className={'LobbyScreen-avatarPrev'} onClick={this.onClickAvatarPrev} src={'assets/icons/arrowLeft.png'} />
-					<img src={avatarPath} className={'LobbyScreen-header-avatar'} />
-					<img className={'LobbyScreen-avatarNext'} onClick={this.onClickAvatarNext} src={'assets/icons/arrowRight.png'} />
-					<span className={'LobbyScreen-header-username'}>
-						{RootStore.username}
-					</span>
-				</div>
-				<div className={'LobbyScreen-headers'}>
-					<span className={lobbyHeaderClasses} onClick={this.onClickHeaderLobby}>
-						{`Lobby (${lobbyStore.lobbies.length})`}
-					</span>
-					<span className={progressHeaderClasses} onClick={this.onClickHeaderProgress}>
-						{`In Progress (0)`}
-					</span>
-					<span className={createHeaderClasses} onClick={this.onClickHeaderCreate}>
-						{'Create Game'}
-					</span>
-				</div>
-				<div className={'LobbyScreen-bodyRow'}>
-					<div className={'LobbyScreen-body'}>
-						{this.selectedTab === 'lobby' && this.getBodyLobby()}
-						{this.selectedTab === 'progress' && this.getBodyProgress()}
-						{this.selectedTab === 'create' && this.getBodyCreate()}
+				<div className={'LobbyScreen-main'}>
+					<div className={'LobbyScreen-header'}>
+						<img className={'LobbyScreen-avatarPrev'} onClick={this.onClickAvatarPrev} src={'assets/icons/arrowLeft.png'} />
+						<img src={avatarPath} className={'LobbyScreen-header-avatar'} />
+						<img className={'LobbyScreen-avatarNext'} onClick={this.onClickAvatarNext} src={'assets/icons/arrowRight.png'} />
+						<span className={'LobbyScreen-header-username'}>
+							{RootStore.username}
+						</span>
 					</div>
-					<div className={'LobbyScreen-sidePanel'}>
-						{this.selectedTab === 'lobby' && this.getSidePanelLobby()}
-						{this.selectedTab === 'progress' && this.getSidePanelProgress()}
-						{this.selectedTab === 'create' && this.getSidePanelCreate()}
+					<div className={'LobbyScreen-headers'}>
+						<span className={lobbyHeaderClasses} onClick={this.onClickHeaderLobby}>
+							{`Lobby (${lobbyStore.lobbies.length})`}
+						</span>
+						<span className={progressHeaderClasses} onClick={this.onClickHeaderProgress}>
+							{`In Progress (0)`}
+						</span>
+						<span className={createHeaderClasses} onClick={this.onClickHeaderCreate}>
+							{'Create Game'}
+						</span>
+					</div>
+					<div className={'LobbyScreen-bodyRow'}>
+						<div className={'LobbyScreen-body'}>
+							{this.selectedTab === 'lobby' && this.getBodyLobby()}
+							{this.selectedTab === 'progress' && this.getBodyProgress()}
+							{this.selectedTab === 'create' && this.getBodyCreate()}
+						</div>
+						<div className={'LobbyScreen-sidePanel'}>
+							{this.selectedTab === 'lobby' && this.getSidePanelLobby()}
+							{this.selectedTab === 'progress' && this.getSidePanelProgress()}
+							{this.selectedTab === 'create' && this.getSidePanelCreate()}
+						</div>
 					</div>
 				</div>
+				<ChatBox messages={lobbyStore.chatMessages} onSendChat={this.onSendChat} />
 				{this.joinFailed && (
 					<div className={'LobbyScreen-loginFailed'}>
 						{this.joinFailed}

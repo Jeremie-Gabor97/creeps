@@ -26,6 +26,7 @@ class LobbyStore {
 		game: 0,
 		gameLobby: 0
 	};
+	@observable chatMessages: SocketContract.IReceiveChatData[] = [];
 
 	constructor(root: RootStore) {
 		this.rootStore = root;
@@ -40,6 +41,10 @@ class GameLobbyStore {
 	@observable numTeams: number = 2;
 	@observable maxPlayersPerTeam: number = 4;
 	@observable players: Dictionary<SocketContract.IGameLobbyPlayer> = {};
+	@observable starting: boolean = false;
+	@observable timeLeft: number = 30;
+	@observable host: string = '';
+	@observable chatMessages: SocketContract.IReceiveChatData[] = [];
 
 	constructor(root: RootStore) {
 		this.rootStore = root;

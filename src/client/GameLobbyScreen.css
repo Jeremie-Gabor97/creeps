@@ -1,4 +1,4 @@
-.GameLobbyScreen {
+.GameLobbyScreen-main {
 	display: flex;
 	align-items: center;
 	padding-top: 10px;
@@ -98,4 +98,39 @@
 }
 .GameLobbyScreen-switchColorYellow {
 	background-color: #DAFF7F;
+}
+
+.GameLobbyScreen-mainContainer {
+	flex: 1 1 0;
+	position: relative;
+}
+
+.GameLobbyScreen-switchContainer,
+.GameLobbyScreen-creepContainer {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	position: absolute;
+	left: 0;
+	top: 0;
+	width: 100%;
+	height: 100%;
+}
+
+.fadez-enter {
+	opacity: 0;
+}
+
+.fadez-enter-active {
+	opacity: 1;
+	transition: all 1s ease-in-out;
+}
+
+.fadez-leave {
+	opacity: 1;
+}
+
+.fadez-leave-active {
+	opacity: 0;
+	transition: all 1s ease-in-out;
 }
