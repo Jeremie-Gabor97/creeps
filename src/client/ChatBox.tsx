@@ -17,25 +17,19 @@ class ChatBox extends React.Component<IChatBoxProps> {
 	shouldStayAtBottom: boolean = false;
 	@observable message: string = '';
 
-	componentWillReceiveProps(nextProps: IChatBoxProps) {
-		console.log('willreceive');
-		if (nextProps.messages !== this.props.messages && this.messagesRef) {
+	UNSAFE_componentWillUpdate(nextProps: IChatBoxProps) {
+		if (this.shouldStayAtBottom === false) {
 			const maxScroll = this.messagesRef.scrollHeight - this.messagesRef.offsetHeight;
-			console.log(maxScroll);
 			if (maxScroll - this.messagesRef.scrollTop < 1) {
 				this.shouldStayAtBottom = true;
-				console.log('should stay');
 			}
 		}
 	}
 
 	componentDidUpdate(prevProps: IChatBoxProps) {
-		console.log('did update');
-		if (prevProps.messages !== this.props.messages && this.shouldStayAtBottom) {
+		if (this.shouldStayAtBottom) {
 			this.shouldStayAtBottom = false;
-			
 			if (this.messagesRef) {
-				console.log('trying to stay');
 				const maxScroll = this.messagesRef.scrollHeight - this.messagesRef.offsetHeight;
 				console.log(maxScroll);
 				this.messagesRef.scrollTop = maxScroll;

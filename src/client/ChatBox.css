@@ -12,6 +12,14 @@
 .ChatBox-messages {
 	flex: 1 1 0;
 	overflow: auto;
+	background-color: white;
+}
+
+.ChatBox-message {
+	padding: 2px 4px;
+}
+.ChatBox-message:nth-child(even) {
+	background-color: #f5f5f5;
 }
 
 .ChatBox-inputContainer {
@@ -22,4 +30,5 @@
 .ChatBox-input {
 	flex: 1 1 0;
 	margin-right: 2px;
+	padding: 0px 4px;
 }
