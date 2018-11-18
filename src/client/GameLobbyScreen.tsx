@@ -3,10 +3,11 @@ import { observable } from 'mobx';
 import { observer } from 'mobx-react';
 import * as React from 'react';
 import * as ReactCSSTransitionGroup from 'react-addons-css-transition-group';
+import { Key } from 'ts-key-enum';
 
 import * as SocketContract from '../shared/socketContract';
 import { SocketEvent } from '../shared/socketContract';
-import { addGameLobbyChat, startGameTimer, updateGameLobby, updateLobby } from './Actions';
+import { addGameLobbyChat, startGameTimer, updateGame, updateGameLobby, updateLobby } from './Actions';
 import { ScreenType } from './App';
 import ChatBox from './ChatBox';
 import rootStore, { gameLobbyStore } from './Stores';
@@ -20,6 +21,7 @@ export interface IGameLobbyScreenProps {
 
 @observer
 class GameLobbyScreen extends React.Component<IGameLobbyScreenProps> {
+	chatBox: ChatBox;
 
 	componentDidMount() {
 		this.attachSocketListeners();
@@ -34,6 +36,7 @@ class GameLobbyScreen extends React.Component<IGameLobbyScreenProps> {
 		this.props.socket.on(SocketEvent.GameLobbyUpdate, this.onGameLobbyUpdate);
 		this.props.socket.on(SocketEvent.StartingGame, this.onStartingGame);
 		this.props.socket.on(SocketEvent.ReceiveChat, this.onReceiveChat);
+		this.props.socket.on(SocketEvent.GameUpdate, this.onGameUpdate);
 	}
 
 	removeSocketListeners() {
@@ -41,6 +44,7 @@ class GameLobbyScreen extends React.Component<IGameLobbyScreenProps> {
 		this.props.socket.removeEventListener(SocketEvent.GameLobbyUpdate, this.onGameLobbyUpdate);
 		this.props.socket.removeEventListener(SocketEvent.StartingGame, this.onStartingGame);
 		this.props.socket.removeEventListener(SocketEvent.ReceiveChat, this.onReceiveChat);
+		this.props.socket.removeEventListener(SocketEvent.GameUpdate, this.onGameUpdate);
 	}
 
 	onSendChat = (message: string) => {
@@ -63,6 +67,11 @@ class GameLobbyScreen extends React.Component<IGameLobbyScreenProps> {
 		updateGameLobby(data);
 	}
 
+	onGameUpdate = (data: SocketContract.IGameUpdateData) => {
+		updateGame(data);
+		this.props.switchScreen(ScreenType.Game);
+	}
+
 	onStartingGame = (data: SocketContract.IStartingGameData) => {
 		startGameTimer(data);
 	}
@@ -80,6 +89,12 @@ class GameLobbyScreen extends React.Component<IGameLobbyScreenProps> {
 			index
 		};
 		this.props.socket.emit(SocketEvent.SelectCreep, data);
+	}
+
+	onKeyUp = (e: React.KeyboardEvent) => {
+		if (e.key === Key.Enter) {
+			this.chatBox.setFocus();
+		}
 	}
 
 	switchTeam = (team: number) => {
@@ -169,7 +184,7 @@ class GameLobbyScreen extends React.Component<IGameLobbyScreenProps> {
 		);
 
 		return (
-			<div className={'GameLobbyScreen'}>
+			<div className={'GameLobbyScreen noFocus'} onKeyUp={this.onKeyUp} tabIndex={0}>
 				<div className={'GameLobbyScreen-main'}>
 					<div className={'GameLobbyScreen-teams'}>
 						<div className={'GameLobbyScreen-spacer'} />
@@ -245,7 +260,11 @@ class GameLobbyScreen extends React.Component<IGameLobbyScreenProps> {
 						<div className={'GameLobbyScreen-spacer'} />
 					</div>
 				</div>
-				<ChatBox messages={gameLobbyStore.chatMessages} onSendChat={this.onSendChat} />
+				<ChatBox
+					messages={gameLobbyStore.chatMessages}
+					onSendChat={this.onSendChat}
+					ref={x => { this.chatBox = x; }}
+				/>
 			</div >
 		);
 	}

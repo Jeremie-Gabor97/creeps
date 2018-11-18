@@ -6,6 +6,7 @@ import * as io from 'socket.io-client';
 
 import * as SocketContract from '../shared/socketContract';
 import GameLobbyScreen from './GameLobbyScreen';
+import GameScreen from './GameScreen';
 import LobbyScreen from './LobbyScreen';
 import MainScreen from './MainScreen';
 import RootStore from './Stores';
@@ -15,7 +16,8 @@ import './App.css';
 export enum ScreenType {
 	Main,
 	Lobby,
-	GameLobby
+	GameLobby,
+	Game
 }
 
 @observer
@@ -46,6 +48,8 @@ class App extends React.Component<{}> {
 				return <LobbyScreen key={'lobby'} socket={this.socket} switchScreen={this.switchScreen} />;
 			case ScreenType.GameLobby:
 				return <GameLobbyScreen key={'gameLobby'} socket={this.socket} switchScreen={this.switchScreen} />;
+			case ScreenType.Game:
+				return <GameScreen key={'game'} socket={this.socket} switchScreen={this.switchScreen} />;
 			default:
 				return null;
 		}

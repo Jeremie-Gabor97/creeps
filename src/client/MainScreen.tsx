@@ -34,7 +34,7 @@ class MainScreen extends React.Component<IMainScreenProps> {
 	}
 
 	removeSocketListeners() {
-		this.props.socket.on(SocketEvent.ConfirmUsername, this.onConfirmUsername);
+		this.props.socket.removeEventListener(SocketEvent.ConfirmUsername, this.onConfirmUsername);
 		this.props.socket.removeEventListener(SocketEvent.LoginFailed, this.onLoginFailed);
 		this.props.socket.removeEventListener(SocketEvent.LobbyUpdate, this.onLobbyUpdate);
 	}

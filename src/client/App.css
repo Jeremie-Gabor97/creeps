@@ -73,3 +73,7 @@
 .button:hover {
 	background: lightgray;
 }
+
+.noFocus:focus {
+	outline: none;
+}

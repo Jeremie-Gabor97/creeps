@@ -20,6 +20,13 @@ export const updateGameLobby = action((data: SocketContract.IGameLobbyUpdateData
 	Stores.gameLobbyStore.host = data.host;
 });
 
+export const updateGame = action((data: SocketContract.IGameUpdateData) => {
+	Stores.gameStore.creeps = data.creeps;
+	Stores.gameStore.minis = data.minis;
+	Stores.gameStore.projectiles = data.projectiles;
+	Stores.gameStore.towers = data.towers;
+});
+
 export const changeAvatar = action((socket: SocketIOClient.Socket, forward: boolean) => {
 	if (forward) {
 		RootStore.avatarIndex += 1;

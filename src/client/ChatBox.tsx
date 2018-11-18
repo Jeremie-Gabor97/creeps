@@ -1,6 +1,7 @@
 import { observable, when } from 'mobx';
 import { observer } from 'mobx-react';
 import * as React from 'react';
+import { Key } from 'ts-key-enum';
 import * as SocketContract from '../shared/socketContract';
 
 import './ChatBox.css';
@@ -43,16 +44,29 @@ class ChatBox extends React.Component<IChatBoxProps> {
 		}
 	}
 
+	submit() {
+		if (this.message) {
+			this.props.onSendChat(this.message);
+			this.message = '';
+		}
+	}
+
 	onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		this.message = e.target.value;
 	}
 
 	onClickSubmit = () => {
-		this.props.onSendChat(this.message);
+		this.submit();
+	}
+
+	onKeyUp = (e: React.KeyboardEvent<HTMLInputElement>) => {
+		if (e.key === Key.Enter) {
+			e.stopPropagation();
+			this.submit();
+		}
 	}
 
 	public render() {
-		console.log('render');
 		return (
 			<div className={'ChatBox'}>
 				<div className={'ChatBox-messages'} ref={x => { this.messagesRef = x; }}>
@@ -70,6 +84,7 @@ class ChatBox extends React.Component<IChatBoxProps> {
 						onChange={this.onChange}
 						value={this.message}
 						ref={x => { this.inputRef = x; }}
+						onKeyUp={this.onKeyUp}
 					/>
 					<div className={'ChatBox-submit button'} onClick={this.onClickSubmit}>
 						{'Send'}

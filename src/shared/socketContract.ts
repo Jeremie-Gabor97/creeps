@@ -1,4 +1,4 @@
-import { Dictionary } from './utils';
+import { Dictionary, Pos } from './utils';
 
 export const NUM_AVATARS = 9;
 export const AVATAR_NAMES = [
@@ -53,6 +53,9 @@ export const SocketEvent = {
 	SwitchTeam: 'switchTeam',
 	GameLobbyUpdate: 'gameLobbyUpdate',
 	SelectCreep: 'selectCreep',
+	// GameEvents
+	GameUpdate: 'gameUpdate',
+	ClickTarget: 'clickTarget'
 };
 
 export enum LoginFailedReason {
@@ -156,4 +159,57 @@ export interface IReceiveChatData {
 	username: string;
 	message: string;
 	isSystem: boolean;
+}
+
+export interface IGameCreep {
+	id: string; // username can change if someone rejoins
+	username: string;
+	position: Pos;
+	bodyRotation: number;
+	headRotation: number;
+	health: number;
+	maxHealth: number;
+}
+
+export interface IGameMini {
+	id: string;
+	position: Pos;
+	rotation: number;
+	team: Team;
+	health: number;
+	maxHealth: number;
+}
+
+export interface IGameTower {
+	id: string;
+	position: Pos;
+	rotation: number;
+	team: Team;
+	health: number;
+	maxHealth: number;
+}
+
+export interface IGameProjectile {
+	id: string;
+	position: Pos;
+	rotation: number;
+	team: Team;
+}
+
+export interface IGameWall {
+	id: string;
+	position: Pos;
+}
+
+export interface IGameUpdateData {
+	projectiles: IGameProjectile[];
+	towers: IGameTower[];
+	creeps: IGameCreep[];
+	minis: IGameMini[];
+	walls: IGameWall[];
+}
+
+export interface IClickTargetData {
+	x: number;
+	y: number;
 }

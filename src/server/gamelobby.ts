@@ -26,7 +26,7 @@ class GameLobby {
 		this.map = options.map;
 		this.title = options.title;
 		this.starting = false;
-		this.startDuration = 5;
+		this.startDuration = 1;
 		this.addPlayer(host, true);
 	}
 

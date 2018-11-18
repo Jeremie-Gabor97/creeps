@@ -1,7 +1,8 @@
 import * as socketIO from 'socket.io';
 import * as SocketContract from '../shared/socketContract';
 import { SocketEvent } from '../shared/socketContract';
-import { Dictionary } from '../shared/utils';
+import { Dictionary, Pos } from '../shared/utils';
+import Entity from './entity';
 import Game from './game';
 import GameLobby from './gamelobby';
 
@@ -16,6 +17,10 @@ export interface IGameLobbyState {
 	creep: SocketContract.Creep;
 }
 
+export interface IGameState {
+	entity: Entity;
+}
+
 export interface IPlayerState {
 	avatarIndex: number;
 	username: string;
@@ -23,6 +28,7 @@ export interface IPlayerState {
 	location: Location;
 	locationId: string;
 	gameLobbyState?: IGameLobbyState;
+	gameState?: IGameState;
 	disconnected: boolean;
 }
 

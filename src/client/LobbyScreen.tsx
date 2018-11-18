@@ -2,6 +2,7 @@ import classNames from 'classnames';
 import { observable } from 'mobx';
 import { observer } from 'mobx-react';
 import * as React from 'react';
+import { Key } from 'ts-key-enum';
 
 import * as SocketContract from '../shared/socketContract';
 import { SocketEvent } from '../shared/socketContract';
@@ -20,6 +21,7 @@ export interface ILobbyScreenProps {
 
 @observer
 class LobbyScreen extends React.Component<ILobbyScreenProps> {
+	chatBox: ChatBox;
 	usernameInput: HTMLInputElement | null;
 	createTitleRef: HTMLInputElement | null;
 	@observable selectedTab: 'lobby' | 'progress' | 'create' = 'lobby';
@@ -153,6 +155,12 @@ class LobbyScreen extends React.Component<ILobbyScreenProps> {
 
 	onChangeCreateMap = (value: string) => {
 		this.createMap = value;
+	}
+
+	onKeyUp = (e: React.KeyboardEvent) => {
+		if (e.key === Key.Enter) {
+			this.chatBox.setFocus();
+		}
 	}
 
 	getBodyLobby() {
@@ -292,7 +300,7 @@ class LobbyScreen extends React.Component<ILobbyScreenProps> {
 		const avatarPath = `assets/avatars/${SocketContract.AVATAR_NAMES[RootStore.avatarIndex]}.png`;
 
 		return (
-			<div className={'LobbyScreen'}>
+			<div className={'LobbyScreen noFocus'} onKeyUp={this.onKeyUp} tabIndex={0}>
 				<div className={'LobbyScreen-main'}>
 					<div className={'LobbyScreen-header'}>
 						<img className={'LobbyScreen-avatarPrev'} onClick={this.onClickAvatarPrev} src={'assets/icons/arrowLeft.png'} />
@@ -326,7 +334,11 @@ class LobbyScreen extends React.Component<ILobbyScreenProps> {
 						</div>
 					</div>
 				</div>
-				<ChatBox messages={lobbyStore.chatMessages} onSendChat={this.onSendChat} />
+				<ChatBox
+					messages={lobbyStore.chatMessages}
+					onSendChat={this.onSendChat}
+					ref={x => { this.chatBox = x; }}
+				/>
 				{this.joinFailed && (
 					<div className={'LobbyScreen-loginFailed'}>
 						{this.joinFailed}

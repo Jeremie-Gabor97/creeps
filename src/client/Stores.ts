@@ -54,6 +54,12 @@ class GameLobbyStore {
 class GameStore {
 	rootStore: RootStore;
 
+	@observable projectiles: SocketContract.IGameProjectile[] = [];
+	@observable towers: SocketContract.IGameTower[] = [];
+	@observable minis: SocketContract.IGameMini[] = [];
+	@observable creeps: SocketContract.IGameCreep[] = [];
+	@observable walls: SocketContract.IGameWall[] = [];
+
 	constructor(root: RootStore) {
 		this.rootStore = root;
 	}
