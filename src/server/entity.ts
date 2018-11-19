@@ -23,6 +23,7 @@ export interface IEntityParams {
 
 export type radians = number;
 export const MOVE_THRESHOLD = 0.01;
+export const SHOOT_THRESHOLD = 0.01;
 export const STOP_MOVE_THRESHOLD = 1;
 
 // creep, mini, tower
@@ -34,6 +35,7 @@ class Entity {
 	headRotationSpeed: number;
 	range: number;
 	fireRate: number;
+	fireCooldown: number;
 	team: Team;
 	footprint: number;
 	moveSpeed: number;
@@ -58,6 +60,7 @@ class Entity {
 		this.headRotationSpeed = params.headRotationSpeed || 0;
 		this.range = params.range || 10;
 		this.fireRate = params.fireRate || 1;
+		this.fireCooldown = 0;
 		this.team = params.team;
 		this.footprint = params.footprint;
 
@@ -76,31 +79,85 @@ class Entity {
 		this.moveSpeed = params.moveSpeed || 0;
 	}
 
+	shouldFire() {
+		if (this.targetEntity && this.fireCooldown === 0) {
+			const positionVectorX = this.targetEntity.position.x - this.position.x;
+			// browser y-coordinate is reversed
+			const positionVectorY = this.position.y - this.targetEntity.position.y;
+			const distanceSquared = positionVectorX * positionVectorX + positionVectorY * positionVectorY;
+			// target in range so can shoot
+			if (distanceSquared <= this.range * this.range) {
+				let targetAngle = Math.atan2(positionVectorY, positionVectorX);
+				if (targetAngle < 0) {
+					targetAngle += 2 * Math.PI;
+				}
+				// head is pointing there so can shoot
+				if (Math.abs(targetAngle - this.headRotation) < SHOOT_THRESHOLD) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	tickCooldowns(deltaTime: number) {
+		if (this.fireCooldown > 0) {
+			this.fireCooldown -= deltaTime;
+			if (this.fireCooldown < 0) {
+				this.fireCooldown = 0;
+			}
+		}
+	}
+
 	takeDamage(damage: number) {
 		this.health = Math.max(this.health - damage, 0);
 	}
 
-	turnTowards(position: Pos, deltaTime: number) {
-		const positionVectorX = position.x - this.position.x;
-		// browser y-coordinate is reversed
-		const positionVectorY = this.position.y - position.y;
-		let targetAngle = Math.atan2(positionVectorY, positionVectorX);
-		if (targetAngle < 0) {
-			targetAngle += 2 * Math.PI;
+	turnTowardsTarget(deltaTime: number) {
+		let targetEntityAngle: radians | null = null;
+		let targetPositionAngle: radians | null = null;
+		if (this.targetEntity) {
+			const positionVectorX = this.targetEntity.position.x - this.position.x;
+			// browser y-coordinate is reversed
+			const positionVectorY = this.position.y - this.targetEntity.position.y;
+			targetEntityAngle = Math.atan2(positionVectorY, positionVectorX);
+			if (targetEntityAngle < 0) {
+				targetEntityAngle += 2 * Math.PI;
+			}
 		}
+		if (this.targetPosition) {
+			const positionVectorX = this.targetPosition.x - this.position.x;
+			// browser y-coordinate is reversed
+			const positionVectorY = this.position.y - this.targetPosition.y;
+			targetPositionAngle = Math.atan2(positionVectorY, positionVectorX);
+			if (targetPositionAngle < 0) {
+				targetPositionAngle += 2 * Math.PI;
+			}
+		}
+
 		const baseTurnDistance = this.baseRotationSpeed * deltaTime;
 		const headTurnDistance = this.headRotationSpeed * deltaTime;
-		this.baseRotation = this.getNewRotation(targetAngle, this.baseRotation, baseTurnDistance);
-		this.headRotation = this.getNewRotation(targetAngle, this.headRotation, headTurnDistance);
+		if (this.targetEntity && this.moveTowardsEntity) {
+			this.baseRotation = this.getNewRotation(targetEntityAngle, this.baseRotation, baseTurnDistance);
+			this.headRotation = this.getNewRotation(targetEntityAngle, this.headRotation, headTurnDistance);
+		}
+		else if (this.targetEntity && this.targetPosition) {
+			this.baseRotation = this.getNewRotation(targetPositionAngle, this.baseRotation, baseTurnDistance);
+			this.headRotation = this.getNewRotation(targetEntityAngle, this.headRotation, headTurnDistance);
+		}
+		else if (this.targetPosition) {
+			this.baseRotation = this.getNewRotation(targetPositionAngle, this.baseRotation, baseTurnDistance);
+			this.headRotation = this.getNewRotation(targetPositionAngle, this.headRotation, headTurnDistance);
+		}
 	}
 
 	moveTowardsTarget(deltaTime: number) {
 		let targetMovePosition: Pos | null = null;
-		if (this.targetPosition) {
-			targetMovePosition = this.targetPosition;
-		}
-		else if (this.targetEntity && this.moveTowardsEntity) {
+		if (this.targetEntity && this.moveTowardsEntity) {
 			targetMovePosition = this.targetEntity.position;
+		}
+		else if (this.targetPosition) {
+			targetMovePosition = this.targetPosition;
 		}
 		if (targetMovePosition) {
 			const positionVectorX = targetMovePosition.x - this.position.x;
@@ -175,6 +232,64 @@ class Entity {
 			console.log(newRotation);
 		}
 		return newRotation;
+	}
+}
+
+interface IProjectileParams {
+	id: string;
+	position: Pos;
+	rotation: radians;
+	owner: Entity;
+	target: Entity;
+	speed: number;
+	damage: number;
+	team: Team;
+}
+
+export class Projectile {
+	id: string;
+	position: Pos;
+	rotation: radians;
+	owner: Entity;
+	target: Entity;
+	speed: number;
+	damage: number;
+	team: Team;
+
+	constructor(params: IProjectileParams) {
+		this.id = params.id;
+		this.position = {
+			x: params.position.x,
+			y: params.position.y
+		};
+		this.rotation = params.rotation;
+		this.owner = params.owner;
+		this.target = params.target;
+		this.speed = params.speed;
+		this.damage = params.damage;
+		this.team = params.team;
+	}
+
+	tick(deltaTime: number) {
+		const positionVectorX = this.target.position.x - this.position.x;
+		// browser y-coordinate is reversed
+		const positionVectorY = this.position.y - this.target.position.y;
+		const distanceSquared = positionVectorX * positionVectorX + positionVectorY * positionVectorY;
+		if (Math.sqrt(distanceSquared) < this.speed * deltaTime) {
+			this.position = {
+				x: this.target.position.x,
+				y: this.target.position.y
+			};
+		}
+		else {
+			let targetAngle = Math.atan2(positionVectorY, positionVectorX);
+			if (targetAngle < 0) {
+				targetAngle += 2 * Math.PI;
+			}
+			this.rotation = targetAngle;
+			this.position.x += Math.cos(targetAngle) * deltaTime * this.speed;
+			this.position.y -= Math.sin(targetAngle) * deltaTime * this.speed;
+		}
 	}
 }
 

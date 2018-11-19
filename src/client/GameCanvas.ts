@@ -19,6 +19,8 @@ class GameCanvas {
 	backgroundSprite: createjs.Bitmap;
 	creepBodySprites: Dictionary<createjs.Bitmap>;
 	creepHeadSprites: Dictionary<createjs.Bitmap>;
+	creepLabels: Dictionary<createjs.Text>;
+	creepHealths: Dictionary<createjs.Shape>;
 	projectileSprites: Dictionary<createjs.Bitmap>;
 	miniSprites: Dictionary<createjs.Bitmap>;
 	towerBodySprites: Dictionary<createjs.Bitmap>;
@@ -44,6 +46,8 @@ class GameCanvas {
 
 		this.creepBodySprites = {};
 		this.creepHeadSprites = {};
+		this.creepLabels = {};
+		this.creepHealths = {};
 		this.miniSprites = {};
 		this.towerBodySprites = {};
 		this.towerHeadSprites = {};
@@ -105,7 +109,7 @@ class GameCanvas {
 		this.mainContainer.addChild(this.projectilesContainer);
 
 		this.stage.addChild(this.mainContainer);
-		
+
 		this.wallsDisposer = autorun(this.renderWalls);
 		this.towersDisposer = autorun(this.renderTowers);
 		this.minisDisposer = autorun(this.renderMinis);
@@ -219,9 +223,11 @@ class GameCanvas {
 		gameStore.projectiles.forEach(projectile => {
 			// projectile is new
 			if (!this.projectileSprites[projectile.id]) {
-				const newSprite = new createjs.Bitmap('');
+				const newSprite = new createjs.Bitmap(`assets/creeps/bullet.png`);
 				newSprite.x = projectile.position.x;
 				newSprite.y = projectile.position.y;
+				newSprite.regX = 4;
+				newSprite.regY = 4;
 				newSprite.rotation = degrees(projectile.rotation) * -1;
 				this.projectileSprites[projectile.id] = newSprite;
 				this.projectilesContainer.addChild(newSprite);
@@ -242,8 +248,12 @@ class GameCanvas {
 			if (!gameStore.creeps.find(creep => creep.id === creepId)) {
 				this.creepsContainer.removeChild(this.creepBodySprites[creepId]);
 				this.creepsContainer.removeChild(this.creepHeadSprites[creepId]);
+				this.creepsContainer.removeChild(this.creepHealths[creepId]);
+				this.creepsContainer.removeChild(this.creepLabels[creepId]);
 				delete this.creepHeadSprites[creepId];
 				delete this.creepBodySprites[creepId];
+				delete this.creepHealths[creepId];
+				delete this.creepLabels[creepId];
 			}
 		});
 		gameStore.creeps.forEach(creep => {
@@ -265,8 +275,24 @@ class GameCanvas {
 				newHeadSprite.rotation = degrees(creep.headRotation) * -1;
 				this.creepHeadSprites[creep.id] = newHeadSprite;
 
+				const newLabel = new createjs.Text(`${creep.username}`);
+				newLabel.x = creep.position.x;
+				newLabel.y = creep.position.y - 30;
+				newLabel.textAlign = 'center';
+				this.creepLabels[creep.id] = newLabel;
+
+				const newHealth = new createjs.Shape();
+				newHealth.x = creep.position.x;
+				newHealth.y = creep.position.y - 20;
+				newHealth.graphics.beginFill('green');
+				newHealth.graphics.drawRect(-16, 0, 32 * creep.health / creep.maxHealth, 4);
+				newHealth.graphics.endFill();
+				this.creepHealths[creep.id] = newHealth;
+
 				this.creepsContainer.addChild(newBodySprite);
 				this.creepsContainer.addChild(newHeadSprite);
+				this.creepsContainer.addChild(newLabel);
+				this.creepsContainer.addChild(newHealth);
 			}
 			// creep needs updating
 			else {
@@ -279,6 +305,18 @@ class GameCanvas {
 				oldHeadSprite.x = creep.position.x;
 				oldHeadSprite.y = creep.position.y;
 				oldHeadSprite.rotation = degrees(creep.headRotation) * -1;
+
+				const oldLabel = this.creepLabels[creep.id];
+				oldLabel.x = creep.position.x;
+				oldLabel.y = creep.position.y - 30;
+
+				const oldHealth = this.creepHealths[creep.id];
+				oldHealth.x = creep.position.x;
+				oldHealth.y = creep.position.y - 20;
+				oldHealth.graphics.clear();
+				oldHealth.graphics.beginFill('green');
+				oldHealth.graphics.drawRect(-16, 0, 32 * creep.health / creep.maxHealth, 4);
+				oldHealth.graphics.endFill();
 			}
 		});
 	}
