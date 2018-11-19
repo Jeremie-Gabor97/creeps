@@ -21,7 +21,8 @@ class GameCanvas {
 	creepHeadSprites: Dictionary<createjs.Bitmap>;
 	projectileSprites: Dictionary<createjs.Bitmap>;
 	miniSprites: Dictionary<createjs.Bitmap>;
-	towerSprites: Dictionary<createjs.Bitmap>;
+	towerBodySprites: Dictionary<createjs.Bitmap>;
+	towerHeadSprites: Dictionary<createjs.Bitmap>;
 	wallSprites: Dictionary<createjs.Bitmap>;
 
 	projectilesContainer: createjs.Container;
@@ -44,7 +45,8 @@ class GameCanvas {
 		this.creepBodySprites = {};
 		this.creepHeadSprites = {};
 		this.miniSprites = {};
-		this.towerSprites = {};
+		this.towerBodySprites = {};
+		this.towerHeadSprites = {};
 		this.projectileSprites = {};
 		this.wallSprites = {};
 		this.setupRenderFunctions();
@@ -85,8 +87,6 @@ class GameCanvas {
 
 	setupRenderFunctions() {
 		this.mainContainer = new createjs.Container();
-		this.mainContainer.y = 4;
-		this.mainContainer.x = 100;
 		const hit = new createjs.Shape();
 		hit.graphics.beginFill('#000').drawRect(0, 0, 800, 400);
 		this.mainContainer.hitArea = hit;
@@ -141,28 +141,41 @@ class GameCanvas {
 
 	renderTowers = () => {
 		// check for towers that are now dead
-		Object.keys(this.towerSprites).forEach(towerId => {
+		Object.keys(this.towerBodySprites).forEach(towerId => {
 			if (!gameStore.towers.find(tower => tower.id === towerId)) {
-				this.towersContainer.removeChild(this.towerSprites[towerId]);
-				delete this.towerSprites[towerId];
+				this.towersContainer.removeChild(this.towerBodySprites[towerId]);
+				this.towersContainer.removeChild(this.towerHeadSprites[towerId]);
+				delete this.towerBodySprites[towerId];
+				delete this.towerHeadSprites[towerId];
 			}
 		});
 		gameStore.towers.forEach(tower => {
 			// tower is new
-			if (!this.towerSprites[tower.id]) {
-				const newSprite = new createjs.Bitmap('');
-				newSprite.x = tower.position.x;
-				newSprite.y = tower.position.y;
-				newSprite.rotation = degrees(tower.rotation) * -1;
-				this.towerSprites[tower.id] = newSprite;
-				this.towersContainer.addChild(newSprite);
+			if (!this.towerBodySprites[tower.id]) {
+				const newBodySprite = new createjs.Bitmap('assets/creeps/towerBody.png');
+				newBodySprite.x = tower.position.x;
+				newBodySprite.y = tower.position.y;
+				newBodySprite.rotation = 0;
+				this.towerBodySprites[tower.id] = newBodySprite;
+				this.towersContainer.addChild(newBodySprite);
+
+				const newHeadSprite = new createjs.Bitmap('assets/creeps/towerHead.png');
+				newHeadSprite.x = tower.position.x;
+				newHeadSprite.y = tower.position.y;
+				newHeadSprite.rotation = degrees(tower.rotation) * -1;
+				this.towerHeadSprites[tower.id] = newHeadSprite;
+				this.towersContainer.addChild(newHeadSprite);
 			}
 			// tower needs updating
 			else {
-				const oldSprite = this.towerSprites[tower.id];
-				oldSprite.x = tower.position.x;
-				oldSprite.y = tower.position.y;
-				oldSprite.rotation = degrees(tower.rotation) * -1;
+				const oldBodySprite = this.towerBodySprites[tower.id];
+				oldBodySprite.x = tower.position.x;
+				oldBodySprite.y = tower.position.y;
+
+				const oldHeadSprite = this.towerHeadSprites[tower.id];
+				oldHeadSprite.x = tower.position.x;
+				oldHeadSprite.y = tower.position.y;
+				oldHeadSprite.rotation = degrees(tower.rotation) * -1;
 			}
 		});
 	}

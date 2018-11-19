@@ -1,3 +1,4 @@
+import TestMap, { IMapDetails } from '../shared/maps/test';
 import * as SocketContract from '../shared/socketContract';
 import { SocketEvent } from '../shared/socketContract';
 import Entity from './entity';
@@ -11,15 +12,34 @@ class Game {
 	id: string;
 	lobby: Lobby;
 	players: IPlayerState[];
+	numTeams: number;
 	gameLoop: NodeJS.Timer;
 	sendLoop: NodeJS.Timer;
+	mapDetails: IMapDetails;
+	time: [number, number];
+
+	towers: Entity[];
+	minis: Entity[];
+	projectiles: Entity[];
 
 	constructor(lobby: Lobby, gameLobby: GameLobby, gameId: string) {
 		this.lobby = lobby;
-		this.players = [];
 		this.id = gameId;
+		this.players = [];
+		this.towers = [];
+		this.minis = [];
+		this.projectiles = [];
+		this.numTeams = gameLobby.numTeams;
 		gameLobby.players.forEach(player => this.addPlayer(player));
-		this.gameLoop = setInterval(this.tick, 1000 / FPS);
+		this.initializeMap(gameLobby);
+		this.initializePlayers();
+		this.time = process.hrtime();
+		this.gameLoop = setInterval(() => {
+			const diff = process.hrtime(this.time);
+			const deltaTime = (diff[0]) + (diff[1] / 1000000000);
+			this.time = process.hrtime();
+			this.tick(deltaTime);
+		}, 1000 / FPS);
 		this.sendLoop = setInterval(this.broadcastState, 1000 / SEND_FPS);
 	}
 
@@ -36,26 +56,7 @@ class Game {
 	addPlayer = (player: IPlayerState) => {
 		player.location = Location.Game;
 		player.locationId = this.id;
-		player.gameState = {
-			entity: new Entity({
-				position: {
-					x: 100 + 100 * player.gameLobbyState.team,
-					y: 100
-				},
-				baseRotation: 0,
-				baseRotationSpeed: 0,
-				headRotation: 0,
-				headRotationSpeed: 0,
-				health: 0,
-				maxHealth: 0,
-				fireRate: 0,
-				range: 0,
-				team: player.gameLobbyState.team,
-				footprint: 0,
-				damage: 0,
-				armor: 0
-			})
-		};
+		
 		this.players.push(player);
 		this.attachSocketListeners(player);
 	}
@@ -80,13 +81,85 @@ class Game {
 	}
 
 	onClickTarget = (player: IPlayerState, data: SocketContract.IClickTargetData) => {
-		player.gameState.entity.position = {
+		player.gameState.entity.targetPosition = {
 			x: data.x,
 			y: data.y
 		};
 	}
 
-	tick() {
+	initializeMap(gameLobby: GameLobby) {
+		const mapDetails = TestMap;
+		this.mapDetails = mapDetails;
+
+		mapDetails.teamDetails.forEach((teamDetail, teamNum) => {
+			teamDetail.towers.forEach(tower => {
+				this.towers.push(new Entity({
+					position: tower.position,
+					damage: tower.damage,
+					health: tower.health,
+					maxHealth: tower.health,
+					baseRotation: 0,
+					baseRotationSpeed: 0,
+					headRotation: 0,
+					headRotationSpeed: 10,
+					range: 80,
+					fireRate: 1,
+					team: teamNum,
+					footprint: 16,
+					armor: 0
+				}));
+			});
+		});
+	}
+
+	initializePlayers() {
+		let teamIndices: number[] = [];
+		for (let i = 0; i < this.numTeams; i++) {
+			teamIndices.push(0);
+		}
+		this.players.forEach(player => {
+			const team = player.gameLobbyState.team;
+			const newTeamIndex = teamIndices[team];
+			teamIndices[team] += 1;
+			const spawnPosition = this.mapDetails.teamDetails[team].spawns[newTeamIndex];
+
+			player.gameState = {
+				entity: new Entity({
+					position: spawnPosition,
+					spawnPoint: spawnPosition,
+					baseRotation: 0,
+					baseRotationSpeed: 3,
+					headRotation: 0,
+					headRotationSpeed: 6,
+					health: 0,
+					maxHealth: 0,
+					fireRate: 0,
+					range: 0,
+					team,
+					footprint: 0,
+					damage: 0,
+					armor: 0,
+					moveSpeed: 30
+				})
+			};
+		});
+	}
+
+	tick(deltaTime: number) {
+		this.players.forEach(player => {
+			const playerEntity = player.gameState.entity;
+			if (playerEntity.targetEntity) {
+				playerEntity.turnTowards(playerEntity.targetEntity.position, deltaTime);
+			}
+			else if (playerEntity.targetPosition) {
+				playerEntity.turnTowards(playerEntity.targetPosition, deltaTime);
+			}
+		});
+
+		this.players.forEach(player => {
+			const playerEntity = player.gameState.entity;
+			playerEntity.moveTowardsTarget(deltaTime);
+		});
 		// update targets (only look for targets if have none, means untarget first),
 		// then turn heads and bodies
 		// then shoot if neccessary
@@ -138,15 +211,25 @@ class Game {
 			walls: []
 		};
 		this.players.forEach(player => {
-			const gameData = player.gameState;
+			const playerEntity = player.gameState.entity;
 			state.creeps.push({
-				position: gameData.entity.position,
-				bodyRotation: 0,
-				headRotation: 0,
+				position: playerEntity.position,
+				bodyRotation: playerEntity.baseRotation,
+				headRotation: playerEntity.headRotation,
 				id: player.username,
 				username: player.username,
 				health: 0,
 				maxHealth: 0
+			});
+		});
+		this.towers.forEach((tower, index) => {
+			state.towers.push({
+				position: tower.position,
+				rotation: tower.headRotation,
+				id: index.toString(),
+				team: tower.team,
+				health: tower.health,
+				maxHealth: tower.maxHealth
 			});
 		});
 		return state;

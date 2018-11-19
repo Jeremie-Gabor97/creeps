@@ -16,9 +16,14 @@ export interface IEntityParams {
 	maxHealth: number;
 	damage: number;
 	armor: number;
+
+	spawnPoint?: Pos;
+	moveSpeed?: number;
 }
 
 export type radians = number;
+export const MOVE_THRESHOLD = 0.01;
+export const STOP_MOVE_THRESHOLD = 1;
 
 // creep, mini, tower
 class Entity {
@@ -31,6 +36,7 @@ class Entity {
 	fireRate: number;
 	team: Team;
 	footprint: number;
+	moveSpeed: number;
 
 	health: number;
 	maxHealth: number;
@@ -38,15 +44,18 @@ class Entity {
 	armor: number;
 
 	alive: boolean;
+	spawnPoint: Pos;
 
-	targetEntity: Entity;
+	targetPosition: Pos | null;
+	targetEntity: Entity | null;
+	moveTowardsEntity: boolean;
 
 	constructor(params: IEntityParams) {
 		this.position = params.position || { x: 0, y: 0 };
 		this.baseRotation = params.baseRotation || 0;
 		this.baseRotationSpeed = params.baseRotationSpeed || 1;
 		this.headRotation = params.headRotation || 0;
-		this.headRotationSpeed = params.headRotation || 0;
+		this.headRotationSpeed = params.headRotationSpeed || 0;
 		this.range = params.range || 10;
 		this.fireRate = params.fireRate || 1;
 		this.team = params.team;
@@ -58,6 +67,13 @@ class Entity {
 		this.armor = params.armor;
 
 		this.alive = true;
+
+		this.targetEntity = null;
+		this.targetPosition = null;
+		this.moveTowardsEntity = false;
+
+		this.spawnPoint = params.spawnPoint || { x: 0, y: 0 };
+		this.moveSpeed = params.moveSpeed || 0;
 	}
 
 	takeDamage(damage: number) {
@@ -66,12 +82,42 @@ class Entity {
 
 	turnTowards(position: Pos, deltaTime: number) {
 		const positionVectorX = position.x - this.position.x;
-		const positionVectorY = position.y - this.position.y;
-		const targetAngle = Math.atan2(positionVectorY, positionVectorX);
+		// browser y-coordinate is reversed
+		const positionVectorY = this.position.y - position.y;
+		let targetAngle = Math.atan2(positionVectorY, positionVectorX);
+		if (targetAngle < 0) {
+			targetAngle += 2 * Math.PI;
+		}
 		const baseTurnDistance = this.baseRotationSpeed * deltaTime;
 		const headTurnDistance = this.headRotationSpeed * deltaTime;
 		this.baseRotation = this.getNewRotation(targetAngle, this.baseRotation, baseTurnDistance);
 		this.headRotation = this.getNewRotation(targetAngle, this.headRotation, headTurnDistance);
+	}
+
+	moveTowardsTarget(deltaTime: number) {
+		let targetMovePosition: Pos | null = null;
+		if (this.targetPosition) {
+			targetMovePosition = this.targetPosition;
+		}
+		else if (this.targetEntity && this.moveTowardsEntity) {
+			targetMovePosition = this.targetEntity.position;
+		}
+		if (targetMovePosition) {
+			const positionVectorX = targetMovePosition.x - this.position.x;
+			// browser y-coordinate is reversed
+			const positionVectorY = this.position.y - targetMovePosition.y;
+			if (positionVectorX * positionVectorX + positionVectorY * positionVectorY > STOP_MOVE_THRESHOLD) {
+				let targetAngle = Math.atan2(positionVectorY, positionVectorX);
+				if (targetAngle < 0) {
+					targetAngle += 2 * Math.PI;
+				}
+				// body is pointing there so can move
+				if (Math.abs(targetAngle - this.baseRotation) < MOVE_THRESHOLD) {
+					this.position.x += Math.cos(this.baseRotation) * deltaTime * this.moveSpeed;
+					this.position.y -= Math.sin(this.baseRotation) * deltaTime * this.moveSpeed;
+				}
+			}
+		}
 	}
 
 	getNewRotation(targetAngle: radians, currentRotation: radians, turnDistance: number) {
@@ -126,6 +172,7 @@ class Entity {
 		}
 		if (newRotation < 0) {
 			console.log('rotation didnt work');
+			console.log(newRotation);
 		}
 		return newRotation;
 	}

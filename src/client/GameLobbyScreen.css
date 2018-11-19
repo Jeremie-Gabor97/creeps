@@ -6,10 +6,6 @@
 	padding: 20px;
 }
 
-.GameLobbyScreen-canvas {
-	background-color: #A5A5A5;
-}
-
 .GameLobbyScreen-main {
 	display: flex;
 	align-items: center;
